@@ -366,9 +366,8 @@ export default class CreateRoomDialog extends React.Component<IProps, IState> {
             );
         }
 
-        const cryptoEnabled = !!MatrixClientPeg.safeGet().getCrypto();
         let e2eeSection: JSX.Element | undefined;
-        if (cryptoEnabled && this.state.joinRule !== JoinRule.Public) {
+        if (this.state.joinRule !== JoinRule.Public) {
             let microcopy: string;
             if (privateShouldBeEncrypted(MatrixClientPeg.safeGet())) {
                 if (this.state.canChangeEncryption) {
@@ -395,7 +394,6 @@ export default class CreateRoomDialog extends React.Component<IProps, IState> {
 
         let e2eeStateSection: JSX.Element | undefined;
         if (
-            cryptoEnabled &&
             SettingsStore.getValue("feature_msc4362_encrypted_state_events", null, false) &&
             this.state.joinRule !== JoinRule.Public
         ) {

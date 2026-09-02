@@ -73,17 +73,6 @@ describe("RolesRoomSettingsTab", () => {
         expect(container.querySelector(`[placeholder="@admin:server"]`)).toBeDisabled();
     });
 
-    it("shows the encryption power level when crypto is enabled", async () => {
-        await renderTab();
-        expect(screen.getByText("Enable room encryption")).toBeInTheDocument();
-    });
-
-    it("hides the encryption power level when crypto is disabled", async () => {
-        mocked(cli.getCrypto).mockReturnValue(undefined);
-        await renderTab();
-        expect(screen.queryByText("Enable room encryption")).not.toBeInTheDocument();
-    });
-
     describe("Element Call", () => {
         const setGroupCallsEnabled = (val: boolean): void => {
             SdkConfig.put({ element_call: { disable: !val } });

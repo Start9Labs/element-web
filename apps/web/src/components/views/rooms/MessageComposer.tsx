@@ -577,7 +577,6 @@ export class MessageComposer extends React.Component<IProps, IState> {
                 );
             }
         }
-        if (!this.props.room.client.getCrypto()) leftIcon = false;
 
         const controls: ReactNode[] = [];
         const menuPosition = this.getMenuPosition();

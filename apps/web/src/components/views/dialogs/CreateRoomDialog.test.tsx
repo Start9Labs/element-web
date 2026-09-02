@@ -12,13 +12,7 @@ import React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { act, fireEvent, render, screen, within } from "test-utils-rtl";
 import { type Room, JoinRule, MatrixError, Preset, Visibility } from "matrix-js-sdk/src/matrix";
-import {
-    flushPromises,
-    getMockClientWithEventEmitter,
-    mkSpace,
-    mockClientMethodsCrypto,
-    mockClientMethodsUser,
-} from "test-utils";
+import { flushPromises, getMockClientWithEventEmitter, mkSpace, mockClientMethodsUser } from "test-utils";
 
 import CreateRoomDialog from "./CreateRoomDialog";
 import SettingsStore from "../../../settings/SettingsStore";
@@ -33,7 +27,6 @@ describe("<CreateRoomDialog />", () => {
     beforeEach(() => {
         mockClient = getMockClientWithEventEmitter({
             ...mockClientMethodsUser(userId),
-            ...mockClientMethodsCrypto(),
             getDomain: vi.fn().mockReturnValue("server.org"),
             getClientWellKnown: vi.fn(),
             doesServerForceEncryptionForPreset: vi.fn(),
@@ -531,17 +524,6 @@ describe("<CreateRoomDialog />", () => {
             expect(onFinished).toHaveBeenCalled();
             const callArgs = onFinished.mock.calls[0];
             expect(callArgs.length === 0 || callArgs[0] === false).toBe(true);
-        });
-    });
-
-    describe("when crypto is disabled", () => {
-        beforeEach(() => mockClient.getCrypto.mockReturnValue(undefined));
-
-        it("does not offer encryption for a private room", async () => {
-            getComponent();
-            await flushPromises();
-
-            expect(screen.queryByLabelText("Enable end-to-end encryption")).not.toBeInTheDocument();
         });
     });
 });

@@ -106,17 +106,6 @@ describe("<RoomSummaryCard />", () => {
         expect(container).toMatchSnapshot();
     });
 
-    it("renders the unencrypted badge", () => {
-        getComponent();
-        expect(screen.getByText("Not encrypted")).toBeInTheDocument();
-    });
-
-    it("does not render the unencrypted badge when crypto is disabled", () => {
-        mockClient.getCrypto.mockReturnValue(undefined);
-        getComponent();
-        expect(screen.queryByText("Not encrypted")).not.toBeInTheDocument();
-    });
-
     it("renders the room topic in the summary", () => {
         room.currentState.setStateEvents([
             new MatrixEvent({

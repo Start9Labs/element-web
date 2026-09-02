@@ -50,7 +50,6 @@ import { topicToHtml } from "../../../HtmlUtils.tsx";
 import { useRoomSummaryCardViewModel } from "../../viewmodels/right_panel/RoomSummaryCardViewModel";
 import { useRoomTopicViewModel } from "../../viewmodels/right_panel/RoomSummaryCardTopicViewModel";
 import { useRoomName } from "../../../hooks/useRoomName.ts";
-import { useCryptoDisabled } from "../../../hooks/useCryptoDisabled";
 
 interface IProps {
     room: Room;
@@ -132,7 +131,6 @@ const RoomSummaryCardView: React.FC<IProps> = ({
     searchTerm = "",
 }) => {
     const vm = useRoomSummaryCardViewModel(room, permalinkCreator, onSearchCancel);
-    const cryptoDisabled = useCryptoDisabled();
     // XXX: this name should be part of the view model
     const name = useRoomName(room);
 
@@ -187,7 +185,7 @@ const RoomSummaryCardView: React.FC<IProps> = ({
                     </Badge>
                 )}
 
-                {!vm.isRoomEncrypted && !cryptoDisabled && (
+                {!vm.isRoomEncrypted && (
                     <Badge kind="blue">
                         <LockOffIcon width="1rem" height="1rem" color="var(--cpd-color-icon-info-primary)" />
                         {_t("common|unencrypted")}
