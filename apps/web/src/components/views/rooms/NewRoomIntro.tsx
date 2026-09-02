@@ -35,7 +35,7 @@ import { SDKContext } from "../../../contexts/SDKContext.ts";
 function hasExpectedEncryptionSettings(matrixClient: MatrixClient, room: Room): boolean {
     const isEncrypted: boolean = matrixClient.isRoomEncrypted(room.roomId);
     const isPublic: boolean = room.getJoinRule() === "public";
-    return isPublic || !privateShouldBeEncrypted(matrixClient) || isEncrypted;
+    return isPublic || !privateShouldBeEncrypted(matrixClient) || isEncrypted || !matrixClient.getCrypto();
 }
 
 const determineIntroMessage = (room: Room, encryptedSingle3rdPartyInvite: boolean): TranslationKey => {

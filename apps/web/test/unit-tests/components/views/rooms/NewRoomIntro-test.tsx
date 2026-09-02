@@ -12,6 +12,7 @@ import { render, screen } from "jest-matrix-react";
 import { EventTimeline, type MatrixClient, Room } from "matrix-js-sdk/src/matrix";
 import { KnownMembership } from "matrix-js-sdk/src/types";
 import { LinkedTextContext } from "@element-hq/web-shared-components";
+import { mocked } from "jest-mock";
 
 import { LocalRoom } from "../../../../../src/models/LocalRoom";
 import {
@@ -68,6 +69,21 @@ describe("NewRoomIntro", () => {
         it("should render the expected intro", () => {
             const expected = `This is the beginning of your direct message history with test_room.`;
             screen.getByText((id, element) => element?.tagName === "SPAN" && element?.textContent === expected);
+        });
+
+        it("should warn that encryption is not enabled", () => {
+            expect(screen.getByText("End-to-end encryption isn't enabled")).toBeInTheDocument();
+        });
+    });
+
+    describe("for a DM Room when crypto is disabled", () => {
+        it("should not warn that encryption is not enabled", () => {
+            mocked(client.getCrypto).mockReturnValue(undefined);
+            jest.spyOn(DMRoomMap.shared(), "getUserIdForRoomId").mockReturnValue(userId);
+            const room = new Room(roomId, client, client.getUserId()!);
+            renderNewRoomIntro(client, room);
+
+            expect(screen.queryByText("End-to-end encryption isn't enabled")).not.toBeInTheDocument();
         });
     });
 
