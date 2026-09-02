@@ -68,6 +68,11 @@ the client never initialises crypto (`fetchShouldForceDisableEncryption`, called
 Everything else follows from `client.getCrypto()` being undefined, a state upstream already tolerates for its
 low-bandwidth mode; each component that still rendered encryption UI in that state guards itself.
 
+The bar for what to remove: the user may learn that encryption is off, but nothing may look like an error or push
+them to enable encryption, verify a session, or set up backup or recovery. Upstream's informational hints stay: the
+composer's open padlock and "unencrypted" placeholder, the "Not encrypted" badge, and the disabled encryption toggles
+with their explanations.
+
 Rules for a patch, so that upstream merges stay cheap:
 
 - New logic goes in a new file. An upstream file gets an import and a one-line guard, in the component that renders
@@ -94,11 +99,8 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
 - `components/views/settings/tabs/user/HelpUserSettingsTab.tsx` — no crypto version line.
 - `components/views/settings/devices/{DeviceTypeIcon,DeviceVerificationStatusCard,SecurityRecommendations,LoginWithQRSection,FilteredDeviceList}.tsx`
   — a Sessions tab without verification badges, cards, recommendations, filters, or QR sign-in.
-- `components/views/rooms/MessageComposer.tsx` — no "not encrypted" icon.
-- `components/views/right_panel/RoomSummaryCardView.tsx` — no "Not encrypted" badge.
-- `components/views/dialogs/CreateRoomDialog.tsx` — no encryption toggles.
-- `components/views/settings/tabs/room/{SecurityRoomSettingsTab,RolesRoomSettingsTab}.tsx` — no encryption toggle or
-  power level for an unencrypted room.
+- `components/views/rooms/NewRoomIntro.tsx` — no "encryption isn't enabled" warning in a new DM; upstream already
+  hides it once the well-known is known, this covers the first render after login.
 - `.github/workflows/start9.yaml` — the only workflow that runs here.
 
 Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts`, `hooks/useCryptoDisabled.ts`, their tests.
