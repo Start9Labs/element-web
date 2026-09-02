@@ -118,6 +118,16 @@ describe("MatrixClientPeg", () => {
             expect(mockInitRustCrypto).toHaveBeenCalledTimes(1);
         });
 
+        it("should not initialise crypto when the homeserver force-disables encryption", async () => {
+            fetchMock.get("https://matrix.org/.well-known/matrix/client", {
+                "io.element.e2ee": { force_disable: true },
+            });
+            const mockInitRustCrypto = vi.spyOn(testPeg.safeGet(), "initRustCrypto").mockResolvedValue(undefined);
+
+            await testPeg.start();
+            expect(mockInitRustCrypto).not.toHaveBeenCalled();
+        });
+
         it("should poll the client well-known by default", async () => {
             vi.spyOn(testPeg.safeGet(), "initRustCrypto").mockResolvedValue(undefined);
             const startClient = vi.spyOn(testPeg.safeGet(), "startClient").mockResolvedValue(undefined);
