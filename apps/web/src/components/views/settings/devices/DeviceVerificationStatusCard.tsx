@@ -13,6 +13,7 @@ import AccessibleButton from "../../elements/AccessibleButton";
 import DeviceSecurityCard from "./DeviceSecurityCard";
 import { DeviceSecurityLearnMore } from "./DeviceSecurityLearnMore";
 import { DeviceSecurityVariation, type ExtendedDevice } from "./types";
+import { useCryptoDisabled } from "../../../../hooks/useCryptoDisabled";
 
 export interface DeviceVerificationStatusCardProps {
     device: ExtendedDevice;
@@ -76,6 +77,7 @@ export const DeviceVerificationStatusCard: React.FC<DeviceVerificationStatusCard
     isCurrentDevice,
     onVerifyDevice,
 }) => {
+    if (useCryptoDisabled()) return null;
     const securityCardProps = getCardProps(device, isCurrentDevice);
 
     return (

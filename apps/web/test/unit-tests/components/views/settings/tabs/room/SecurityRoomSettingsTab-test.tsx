@@ -548,6 +548,21 @@ describe("<SecurityRoomSettingsTab />", () => {
             expect(logger.error).toHaveBeenCalledWith("oups");
         });
 
+        describe("when crypto is disabled", () => {
+            const crypto = client.getCrypto();
+            beforeEach(() => client.getCrypto.mockReturnValue(undefined));
+            afterEach(() => client.getCrypto.mockReturnValue(crypto));
+
+            it("hides the encryption section", async () => {
+                const room = new Room(roomId, client, userId);
+                setRoomStateEvents(room);
+                getComponent(room);
+                await flushPromises();
+
+                expect(screen.queryByLabelText("Encrypted")).not.toBeInTheDocument();
+            });
+        });
+
         describe("when encryption is force disabled by e2ee well-known config", () => {
             beforeEach(() => {
                 client.getClientWellKnown.mockReturnValue({

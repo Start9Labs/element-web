@@ -417,8 +417,8 @@ export default class RolesRoomSettingsTab extends React.Component<IProps, RolesR
             })
             .filter(Boolean);
 
-        // hide the power level selector for enabling E2EE if it the room is already encrypted
-        if (this.state.isRoomEncrypted) {
+        // hide the power level selector for enabling E2EE if the room is already encrypted or this client has no crypto
+        if (this.state.isRoomEncrypted || !this.context.getCrypto()) {
             delete eventsLevels[EventType.RoomEncryption];
         }
 

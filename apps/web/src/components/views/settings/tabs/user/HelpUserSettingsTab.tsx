@@ -56,14 +56,14 @@ export default class HelpUserSettingsTab extends React.Component<EmptyObject, IS
             });
     }
 
-    private getVersionInfo(): { appVersion: string; cryptoVersion: string } {
+    private getVersionInfo(): { appVersion: string; cryptoVersion?: string } {
         const brand = SdkConfig.get().brand;
         const appVersion = this.state.appVersion || "unknown";
-        const cryptoVersion = this.context.getCrypto()?.getVersion() ?? "<not-enabled>";
+        const cryptoVersion = this.context.getCrypto()?.getVersion();
 
         return {
             appVersion: `${_t("setting|help_about|brand_version", { brand })} ${appVersion}`,
-            cryptoVersion: `${_t("setting|help_about|crypto_version")} ${cryptoVersion}`,
+            cryptoVersion: cryptoVersion && `${_t("setting|help_about|crypto_version")} ${cryptoVersion}`,
         };
     }
 
@@ -195,7 +195,7 @@ export default class HelpUserSettingsTab extends React.Component<EmptyObject, IS
 
     private getVersionTextToCopy = (): string => {
         const { appVersion, cryptoVersion } = this.getVersionInfo();
-        return `${appVersion}\n${cryptoVersion}`;
+        return [appVersion, cryptoVersion].filter(Boolean).join("\n");
     };
 
     public render(): React.ReactNode {
@@ -258,8 +258,12 @@ export default class HelpUserSettingsTab extends React.Component<EmptyObject, IS
                             <CopyableText getTextToCopy={this.getVersionTextToCopy}>
                                 {appVersion}
                                 <br />
-                                {cryptoVersion}
-                                <br />
+                                {cryptoVersion && (
+                                    <>
+                                        {cryptoVersion}
+                                        <br />
+                                    </>
+                                )}
                             </CopyableText>
                             {updateButton}
                         </SettingsSubsectionText>

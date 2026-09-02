@@ -10,6 +10,7 @@ import React from "react";
 import { EventType, type MatrixEvent, RoomMember, THREAD_RELATION_TYPE } from "matrix-js-sdk/src/matrix";
 import { act, fireEvent, render, screen, waitFor } from "jest-matrix-react";
 import userEvent from "@testing-library/user-event";
+import { mocked } from "jest-mock";
 import { initOnce } from "@vector-im/matrix-wysiwyg";
 
 import {
@@ -125,6 +126,24 @@ describe("MessageComposer", () => {
 
     describe("for a Room", () => {
         const room = mkStubRoom("!roomId:server", "Room 1", cli);
+
+        it("shows the unencrypted room icon", () => {
+            wrapAndRender({ room });
+            expect(screen.getByLabelText("Messages in this room are not end-to-end encrypted")).toBeInTheDocument();
+        });
+
+        describe("when crypto is disabled", () => {
+            const crypto = cli.getCrypto();
+            beforeEach(() => mocked(cli.getCrypto).mockReturnValue(undefined));
+            afterEach(() => mocked(cli.getCrypto).mockReturnValue(crypto));
+
+            it("hides the unencrypted room icon", () => {
+                wrapAndRender({ room });
+                expect(
+                    screen.queryByLabelText("Messages in this room are not end-to-end encrypted"),
+                ).not.toBeInTheDocument();
+            });
+        });
 
         it("Renders a SendMessageComposer and MessageComposerButtons by default", () => {
             wrapAndRender({ room });

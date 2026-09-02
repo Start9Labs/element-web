@@ -115,6 +115,12 @@ describe("<UserSettingsDialog />", () => {
         expect(container.querySelectorAll(".mx_TabbedView_tabLabel")).toMatchSnapshot();
     });
 
+    it("does not render the encryption tab when crypto is disabled", () => {
+        mockClient.getCrypto.mockReturnValue(undefined);
+        const { queryByTestId } = render(getComponent());
+        expect(queryByTestId(`settings-tab-${UserTab.Encryption}`)).toBeFalsy();
+    });
+
     it("renders ignored users tab when feature_mjolnir is enabled", () => {
         mockSettingsStore.getValue.mockImplementation((settingName) => settingName === "feature_mjolnir");
         const { getByTestId } = render(getComponent());

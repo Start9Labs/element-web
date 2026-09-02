@@ -318,6 +318,25 @@ describe("<SessionManagerTab />", () => {
         ).toBeTruthy();
     });
 
+    describe("when crypto is disabled", () => {
+        beforeEach(() => {
+            mockClient.getCrypto.mockReturnValue(undefined);
+            mockClient.getDevices.mockResolvedValue({
+                devices: [alicesDevice, alicesMobileDevice, alicesOlderMobileDevice],
+            });
+        });
+
+        it("renders sessions without any verification state", async () => {
+            const { container, getByTestId, queryByTestId, queryByText } = render(getComponent());
+            await flushPromises();
+
+            expect(container.querySelector(".mx_DeviceTypeIcon_verificationIcon")).toBeNull();
+            expect(getByTestId("current-session-section").querySelector(".mx_DeviceSecurityCard")).toBeNull();
+            expect(queryByTestId("security-recommendations-section")).toBeNull();
+            expect(queryByText("Link new device")).not.toBeInTheDocument();
+        });
+    });
+
     it("extends device with client information when available", async () => {
         mockClient.getDevices.mockResolvedValue({
             devices: [alicesDevice, alicesMobileDevice],

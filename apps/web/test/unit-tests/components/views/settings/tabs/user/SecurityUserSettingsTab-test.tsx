@@ -64,6 +64,18 @@ describe("<SecurityUserSettingsTab />", () => {
         expect(container).toMatchSnapshot();
     });
 
+    describe("when crypto is disabled", () => {
+        const crypto = mockClient.getCrypto();
+        beforeEach(() => mockClient.getCrypto.mockReturnValue(undefined));
+        afterEach(() => mockClient.getCrypto.mockReturnValue(crypto));
+
+        it("does not render the encryption section", () => {
+            const { queryByText } = render(getComponent());
+
+            expect(queryByText("Message search")).not.toBeInTheDocument();
+        });
+    });
+
     it("renders ignored users", () => {
         getIgnoredUsers.mockReturnValue(["@bob:example.org"]);
         const { getByRole } = render(getComponent());

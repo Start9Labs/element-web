@@ -15,6 +15,7 @@ import DeviceSecurityCard from "./DeviceSecurityCard";
 import { DeviceSecurityLearnMore } from "./DeviceSecurityLearnMore";
 import { filterDevicesBySecurityRecommendation, type FilterVariation, INACTIVE_DEVICE_AGE_DAYS } from "./filter";
 import { DeviceSecurityVariation, type ExtendedDevice, type DevicesDictionary } from "./types";
+import { useCryptoDisabled } from "../../../../hooks/useCryptoDisabled";
 
 interface Props {
     devices: DevicesDictionary;
@@ -23,15 +24,16 @@ interface Props {
 }
 
 const SecurityRecommendations: React.FC<Props> = ({ devices, currentDeviceId, goToFilteredList }) => {
+    const cryptoDisabled = useCryptoDisabled();
     const devicesArray = Object.values<ExtendedDevice>(devices);
 
-    const unverifiedDevicesCount = filterDevicesBySecurityRecommendation(devicesArray, [
-        DeviceSecurityVariation.Unverified,
-    ])
-        // filter out the current device
-        // as unverfied warning and actions
-        // will be shown in current session section
-        .filter((device) => device.device_id !== currentDeviceId).length;
+    const unverifiedDevicesCount = cryptoDisabled
+        ? 0
+        : filterDevicesBySecurityRecommendation(devicesArray, [DeviceSecurityVariation.Unverified])
+              // filter out the current device
+              // as unverfied warning and actions
+              // will be shown in current session section
+              .filter((device) => device.device_id !== currentDeviceId).length;
     const inactiveDevicesCount = filterDevicesBySecurityRecommendation(devicesArray, [
         DeviceSecurityVariation.Inactive,
     ]).length;

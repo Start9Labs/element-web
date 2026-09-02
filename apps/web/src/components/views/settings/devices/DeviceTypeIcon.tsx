@@ -20,6 +20,7 @@ import {
 import { _t, _td } from "../../../../languageHandler";
 import { type ExtendedDevice } from "./types";
 import { DeviceType } from "../../../../utils/device/parseUserAgent";
+import { useCryptoDisabled } from "../../../../hooks/useCryptoDisabled";
 
 interface Props {
     isVerified?: ExtendedDevice["isVerified"];
@@ -41,6 +42,7 @@ const deviceTypeLabel: Record<DeviceType, TranslationKey> = {
 };
 
 export const DeviceTypeIcon: React.FC<Props> = ({ isVerified, isSelected, deviceType }) => {
+    const cryptoDisabled = useCryptoDisabled();
     const Icon = deviceTypeIcon[deviceType!] || deviceTypeIcon[DeviceType.Unknown];
     const label = _t(deviceTypeLabel[deviceType!] || deviceTypeLabel[DeviceType.Unknown]);
     return (
@@ -52,19 +54,20 @@ export const DeviceTypeIcon: React.FC<Props> = ({ isVerified, isSelected, device
             <div className="mx_DeviceTypeIcon_deviceIconWrapper">
                 <Icon className="mx_DeviceTypeIcon_deviceIcon" role="img" aria-label={label} />
             </div>
-            {isVerified ? (
-                <ShieldIcon
-                    className={classNames("mx_DeviceTypeIcon_verificationIcon", "verified")}
-                    role="img"
-                    aria-label={_t("common|verified")}
-                />
-            ) : (
-                <ErrorSolidIcon
-                    className={classNames("mx_DeviceTypeIcon_verificationIcon", "unverified")}
-                    role="img"
-                    aria-label={_t("common|unverified")}
-                />
-            )}
+            {!cryptoDisabled &&
+                (isVerified ? (
+                    <ShieldIcon
+                        className={classNames("mx_DeviceTypeIcon_verificationIcon", "verified")}
+                        role="img"
+                        aria-label={_t("common|verified")}
+                    />
+                ) : (
+                    <ErrorSolidIcon
+                        className={classNames("mx_DeviceTypeIcon_verificationIcon", "unverified")}
+                        role="img"
+                        aria-label={_t("common|unverified")}
+                    />
+                ))}
         </div>
     );
 };
