@@ -21,13 +21,15 @@ up encryption, sends phone browsers to the native apps, and lays out for the des
 
 ```bash
 git fetch upstream --tags
-git merge v1.12.28                  # on master
-# resolve, run the checks below
-git push origin master v1.12.28     # the image build reads its version from the nearest tag
+git merge -Xignore-space-change v1.12.28   # on master
+pnpm lint:fmt:fix                          # re-indent the blocks a patch wraps
+# resolve what is left, run the checks below
+git push origin master v1.12.28            # the image build reads its version from the nearest tag
 ```
 
-Upstream's workflows are disabled in the repo's Actions settings rather than deleted, so `.github/workflows/`
-never conflicts. After a merge, disable anything a release added:
+`-Xignore-space-change` lets upstream's edits win inside a block a patch only re-indented; the formatter puts the
+indentation back. Upstream's workflows are disabled in the repo's Actions settings rather than deleted, so
+`.github/workflows/` never conflicts. After a merge, disable anything a release added:
 
 ```bash
 gh workflow list --all   # everything except "Start9" should read `disabled_manually`
@@ -43,30 +45,66 @@ Tag `master` as `v<upstream>-start9.<n>`, for example `v1.12.27-start9.1`. The `
 
 ## Checks
 
+CI runs upstream's full jest and vitest suites, so an upstream merge that breaks a patch fails there. Locally, run
+the files you touched:
+
 ```bash
 pnpm install --frozen-lockfile
 pnpm exec nx run element-web:test:unit:prepare
-cd apps/web && pnpm exec vitest run src/DeviceListener.test.ts src/utils/crypto
+cd apps/web && pnpm exec vitest run src/hooks src/utils/crypto   # vitest: src/**/*.test.ts*
+cd apps/web && pnpm exec jest test/unit-tests/components/views/settings/devices   # jest: test/unit-tests/**/*-test.ts*
 ```
+
+`lint:types` is red at upstream's own release tags at the moment (matrix-js-sdk under TypeScript 7), so check it
+with `pnpm exec tsc --noEmit 2>&1 | grep -v MSC4108SignInWithQR` in `apps/web` until that clears.
 
 Build the image from the repo root with `docker buildx bake element-web`. It reads `.git` for the version, so
 build from a clone, not an export.
 
 ## Patches
 
-Keep each change as small as it can be, isolated, and tested beside upstream's tests. Gate on what the
-homeserver advertises (`io.element.e2ee.force_disable` in `.well-known/matrix/client`) rather than on
-Start9, and send anything upstream might take upstream, so the patch can go away. Add each patch to this
-list — it is how a reader tells ours from upstream in a diff against the base tag.
+Keyless mode is one decision: when the homeserver's `.well-known/matrix/client` sets `io.element.e2ee.force_disable`,
+the client never initialises crypto (`fetchShouldForceDisableEncryption`, called once from `MatrixClientPeg.assign`).
+Everything else follows from `client.getCrypto()` being undefined, a state upstream already tolerates for its
+low-bandwidth mode; each component that still rendered encryption UI in that state guards itself.
 
-- `apps/web/src/device-listener/DeviceListenerCurrentDevice.ts` — no "set up encryption" toast when the
-  homeserver force-disables encryption and the user has no encrypted rooms.
-- `.github/workflows/start9.yaml` — the only workflow that runs here: tests and the image.
+Rules for a patch, so that upstream merges stay cheap:
+
+- New logic goes in a new file. An upstream file gets an import and a one-line guard, in the component that renders
+  the UI. Never plumb a prop through intermediate components.
+- Gate on `client.getCrypto()` (`useCryptoDisabled()` in function components), not on Start9 or on the well-known.
+  Keyed homeservers keep upstream's behaviour, and the guard doubles as a fix for low-bandwidth mode, which is what
+  makes it worth sending upstream.
+- Prefer adding a line after upstream's block to editing lines inside it. When a wrapper is unavoidable, accept the
+  re-indent; the merge procedure above absorbs it.
+- Tests: fork behaviour in a new test file where the setup is small, otherwise one
+  `describe("when crypto is disabled")` in upstream's test that restores any shared mock afterwards.
+- Add every upstream file touched to the list below; a reader diffing against the base tag uses it to tell ours from
+  theirs.
+
+Upstream files carrying a patch (under `apps/web/src/` unless noted):
+
+- `MatrixClientPeg.ts` — skip crypto initialisation; the only place the well-known decides anything.
+- `verification.ts` — pending-verification lookup tolerates missing crypto.
+- `device-listener/DeviceListenerCurrentDevice.ts` — no setup-encryption toast when the homeserver force-disables
+  encryption and no room is encrypted; covers a session that started while the well-known was unreachable.
+- `components/views/dialogs/UserSettingsDialog.tsx` — no Encryption tab.
+- `components/views/settings/tabs/user/SecurityUserSettingsTab.tsx` — no encryption section, no "encryption
+  disabled by your admin" warning.
+- `components/views/settings/tabs/user/HelpUserSettingsTab.tsx` — no crypto version line.
+- `components/views/settings/devices/{DeviceTypeIcon,DeviceVerificationStatusCard,SecurityRecommendations,LoginWithQRSection,FilteredDeviceList}.tsx`
+  — a Sessions tab without verification badges, cards, recommendations, filters, or QR sign-in.
+- `components/views/rooms/MessageComposer.tsx` — no "not encrypted" icon.
+- `components/views/right_panel/RoomSummaryCardView.tsx` — no "Not encrypted" badge.
+- `components/views/dialogs/CreateRoomDialog.tsx` — no encryption toggles.
+- `components/views/settings/tabs/room/{SecurityRoomSettingsTab,RolesRoomSettingsTab}.tsx` — no encryption toggle or
+  power level for an unencrypted room.
+- `.github/workflows/start9.yaml` — the only workflow that runs here.
+
+Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts`, `hooks/useCryptoDisabled.ts`, their tests.
 
 ## Roadmap
 
-1. Keyless mode: skip crypto initialisation entirely when the homeserver force-disables encryption, then
-   remove the UI that assumes crypto exists (encryption settings, shields, verification prompts).
-2. Mobile: drop the native-app redirect and interstitial; a single-pane layout on narrow viewports (room
+1. Mobile: drop the native-app redirect and interstitial; a single-pane layout on narrow viewports (room
    list, timeline, thread panel), touch-sized controls.
-3. PWA: manifest and icons for the deployment's brand, standalone display, install prompt, iOS meta tags.
+2. PWA: manifest and icons for the deployment's brand, standalone display, install prompt, iOS meta tags.
