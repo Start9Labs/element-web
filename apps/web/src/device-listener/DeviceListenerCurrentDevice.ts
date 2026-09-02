@@ -25,6 +25,7 @@ import {
     showToast as showSetupEncryptionToast,
 } from "../toasts/SetupEncryptionToast";
 import { isSecretStorageBeingAccessed } from "../SecurityManager";
+import { shouldSkipSetupEncryption } from "../utils/crypto/shouldSkipSetupEncryption";
 
 const KEY_BACKUP_POLL_INTERVAL = 5 * 60 * 1000;
 
@@ -169,6 +170,13 @@ export class DeviceListenerCurrentDevice {
     public async recheck(logSpan: LogSpan): Promise<void> {
         const crypto = this.client.getCrypto();
         if (!crypto) {
+            return;
+        }
+
+        await this.client.waitForClientWellKnown();
+        if (await shouldSkipSetupEncryption(this.client)) {
+            logSpan.info("Encryption setup is skipped on this homeserver: no toast needed");
+            this.setDeviceState("ok", logSpan);
             return;
         }
 

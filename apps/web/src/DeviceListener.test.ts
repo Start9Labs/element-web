@@ -450,6 +450,22 @@ describe("DeviceListener", () => {
                 expect(SetupEncryptionToast.showToast).toHaveBeenCalled();
             });
 
+            it("does not show toasts when the homeserver force-disables encryption and no rooms are encrypted", async () => {
+                mockClient!.getClientWellKnown.mockReturnValue({ "io.element.e2ee": { force_disable: true } });
+                vi.spyOn(mockClient.getCrypto()!, "isEncryptionEnabledInRoom").mockResolvedValue(false);
+                await createAndStart();
+
+                expect(SetupEncryptionToast.showToast).not.toHaveBeenCalled();
+                expect(SetupEncryptionToast.hideToast).toHaveBeenCalled();
+            });
+
+            it("shows toasts when the homeserver force-disables encryption but a room is encrypted", async () => {
+                mockClient!.getClientWellKnown.mockReturnValue({ "io.element.e2ee": { force_disable: true } });
+                await createAndStart();
+
+                expect(SetupEncryptionToast.showToast).toHaveBeenCalled();
+            });
+
             it("shows verify session toast when account has cross signing", async () => {
                 mockCrypto!.isCrossSigningReady.mockResolvedValue(true);
                 await createAndStart();
