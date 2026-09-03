@@ -54,6 +54,15 @@ export interface WebConfigJson {
         auth_footer_links?: { text: string; url: string }[];
         auth_footer_powered_by_matrix?: boolean;
     };
+    web_app_manifest?: {
+        // merged over the built-in manifest; icons also replace the favicon and touch icons
+        name?: string;
+        short_name?: string;
+        description?: string;
+        icons?: { src: string; sizes?: string; type?: string; purpose?: string }[];
+        theme_color?: string;
+        background_color?: string;
+    };
 
     force_verification?: boolean; // if true, users must verify new logins
 

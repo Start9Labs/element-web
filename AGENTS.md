@@ -114,6 +114,8 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
 - `components/views/auth/AuthFooter.tsx` — `branding.auth_footer_powered_by_matrix: false` drops the Matrix link.
 - `components/views/auth/PasswordLogin.tsx` and `RegistrationForm.tsx` — `disable_phone_login`; the registration
   form only promises discovery by email when `UIFeature.identityServer` is on.
+- `vector/init.tsx` — applies `web_app_manifest` once the config is loaded.
+- `vector/index.html` — the content security policy admits the generated manifest (`manifest-src blob:`).
 - `packages/shared-types/lib/config.json.d.ts` — types for the keys above.
 - `.github/workflows/start9.yaml` — the only workflow that runs here.
 
@@ -122,7 +124,7 @@ in `docs/fork.md`.
 
 Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts`, `hooks/useCryptoDisabled.ts`,
 `hooks/usePhoneLayout.ts`, `components/views/rooms/RoomHeader/BackToRoomListButton.tsx`,
-`res/css/start9/mobile.pcss`, and their tests.
+`res/css/start9/mobile.pcss`, `vector/webAppManifest.ts`, and their tests.
 
 ## Mobile layout
 
@@ -143,8 +145,25 @@ Rules for mobile work:
 - Verify by screenshot at a phone viewport against a scratch Synapse before and after, and check a desktop viewport
   too: the stylesheet must be a no-op above the breakpoint.
 
+## Installable app
+
+Upstream's `res/manifest.json`, touch icons and service worker already make the client installable; the fork only
+lets a deployment name and brand it. `vector/webAppManifest.ts` merges `web_app_manifest` from the config over the
+built-in manifest, serves the result from a blob URL in place of the static `manifest.json`, and points the
+`apple-mobile-web-app-title` meta, favicon and touch icons at the same values, so iOS gets the branding whether or
+not it reads the manifest. Without the key nothing runs and upstream's static files stand.
+
+Rules for it:
+
+- Keep `res/manifest.json` upstream's. Deployment branding is `web_app_manifest`; anything else the manifest should
+  say for every deployment is an upstream change.
+- Verify in Chromium through the DevTools protocol (`Page.getAppManifest` and `Page.getInstallabilityErrors` over a
+  Playwright CDP session): headless Chromium never fires `beforeinstallprompt`, so that is the only signal that the
+  served manifest passes the install checks.
+
 ## Roadmap
 
 1. Mobile polish: message actions by tap, composer and keyboard behaviour with `interactive-widget` and safe-area
    insets, touch-sized room list rows, a space switcher in the list header.
-2. PWA: manifest and icons for the deployment's brand, standalone display, install prompt, iOS meta tags.
+2. Install prompt: an in-app "install" entry from `beforeinstallprompt` where the browser fires it, and a one-time
+   Add to Home Screen hint on iOS Safari.

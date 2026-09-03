@@ -29,7 +29,7 @@
         worker-src 'self' blob: <%= csp_extra_source %>;
         frame-src * blob: data:;
         form-action 'self' <%= csp_extra_source %>;
-        manifest-src 'self' <%= csp_extra_source %>;
+        manifest-src 'self' blob: <%= csp_extra_source %>;
     ">
     <% for (var i=0; i < htmlWebpackPlugin.files.css.length; i++) {
         var file = htmlWebpackPlugin.files.css[i];

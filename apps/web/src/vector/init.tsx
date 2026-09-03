@@ -29,6 +29,7 @@ import WebPlatform from "./platform/WebPlatform";
 import { initRageshake, initRageshakeStore } from "./rageshakesetup";
 import { ModuleApi } from "../modules/Api.ts";
 import { type URLParams } from "./url_utils.ts";
+import { applyWebAppManifest } from "./webAppManifest";
 
 export const rageshakePromise = initRageshake();
 
@@ -83,6 +84,7 @@ export async function loadConfig(): Promise<void> {
     } else {
         SdkConfig.reset();
     }
+    applyWebAppManifest();
 }
 
 export async function loadLanguage(): Promise<void> {
