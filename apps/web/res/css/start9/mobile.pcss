@@ -42,17 +42,58 @@ Please see LICENSE files in the repository root for full details.
         display: none;
     }
 
-    /* The welcome and sign-in card fits the width instead of assuming 500px. */
+    /* Sign in, register and forgot-password: one column, the logo above the form, the card never wider than the
+       screen. Upstream lays the modal out for 700px and only adapts below 480px. */
+    .mx_AuthPage {
+        height: 100dvh;
+    }
+
     .mx_AuthPage_modal {
-        max-width: 100%;
+        width: calc(100% - 2 * var(--cpd-space-4x));
+        max-width: 532px;
+        margin: var(--cpd-space-6x) auto auto;
     }
 
-    .mx_Welcome {
-        padding-inline: var(--cpd-space-4x);
-    }
-
-    .mx_DefaultWelcome .mx_DefaultWelcome_buttons a {
+    .mx_AuthPage_modalContent {
+        flex-direction: column;
+        align-items: center;
         width: 100%;
+    }
+
+    .mx_AuthHeader {
+        display: flex;
+        width: auto;
+        padding: var(--cpd-space-8x) var(--cpd-space-6x) 0;
+        align-items: center;
+    }
+
+    .mx_AuthHeaderLogo {
+        display: block;
+        margin: 0;
+        padding: 0;
+    }
+
+    .mx_AuthHeaderLogo img {
+        width: auto;
+        max-width: 100%;
+        max-height: 72px;
+    }
+
+    .mx_AuthBody,
+    .mx_AuthBody.mx_AuthBody_forgot-password {
+        width: 100%;
+        max-width: 500px;
+        min-height: 0;
+        box-sizing: border-box;
+        padding: var(--cpd-space-6x) var(--cpd-space-5x);
+    }
+
+    .mx_AuthBody_fieldRow {
+        flex-direction: column;
+    }
+
+    .mx_AuthBody_fieldRow > .mx_Field {
+        margin-inline: 0;
     }
 
     /* Dialogs fill the screen. */

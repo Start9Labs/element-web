@@ -138,6 +138,6 @@ Rules for mobile work:
 
 ## Roadmap
 
-1. Mobile polish: the welcome page at phone width, message actions by tap, composer and keyboard behaviour with
-   `interactive-widget` and safe-area insets, touch-sized room list rows, a space switcher in the list header.
+1. Mobile polish: message actions by tap, composer and keyboard behaviour with `interactive-widget` and safe-area
+   insets, touch-sized room list rows, a space switcher in the list header.
 2. PWA: manifest and icons for the deployment's brand, standalone display, install prompt, iOS meta tags.
