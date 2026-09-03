@@ -104,6 +104,9 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
 - `viewmodels/menus/UserMenuViewModel.ts` — no "Link new device" in the user menu without crypto.
 - `components/views/rooms/RoomHeader/RoomHeader.tsx` — mounts `BackToRoomListButton`.
 - `vector/index.ts` — imports the mobile stylesheet; no redirect of phone browsers to the native-app page.
+- `SdkConfig.ts` — no app-store links by default, so the unsupported-browser page offers none.
+- `webpack.config.ts` — the native-app guide page is not built.
+- `res/manifest.json` (under `apps/web/`) — no related native applications.
 - `.github/workflows/start9.yaml` — the only workflow that runs here.
 
 Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts`, `hooks/useCryptoDisabled.ts`,
