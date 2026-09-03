@@ -93,7 +93,8 @@ Rules for a patch, so that upstream merges stay cheap:
 
 Upstream files carrying a patch (under `apps/web/src/` unless noted):
 
-- `MatrixClientPeg.ts` — skip crypto initialisation; the only place the well-known decides anything.
+- `MatrixClientPeg.ts` — skip crypto initialisation, the only place the well-known decides anything; start web push
+  once the client runs.
 - `verification.ts` — pending-verification lookup tolerates missing crypto.
 - `device-listener/DeviceListenerCurrentDevice.ts` — no setup-encryption toast when the homeserver force-disables
   encryption and no room is encrypted; covers a session that started while the well-known was unreachable.
@@ -115,6 +116,9 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
 - `components/views/auth/PasswordLogin.tsx` and `RegistrationForm.tsx` — `disable_phone_login`; the registration
   form only promises discovery by email when `UIFeature.identityServer` is on.
 - `vector/init.tsx` — applies `web_app_manifest` once the config is loaded.
+- `serviceworker/index.ts` — imports the push handlers.
+- `BasePlatform.ts` — the client's own notifications carry the room id as their tag, so one from the service worker
+  for the same room replaces it instead of doubling up.
 - `vector/index.html` — the content security policy admits the generated manifest (`manifest-src blob:`).
 - `packages/shared-types/lib/config.json.d.ts` — types for the keys above.
 - `.github/workflows/start9.yaml` — the only workflow that runs here.
@@ -124,7 +128,8 @@ in `docs/fork.md`.
 
 Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts`, `hooks/useCryptoDisabled.ts`,
 `hooks/usePhoneLayout.ts`, `components/views/rooms/RoomHeader/BackToRoomListButton.tsx`,
-`res/css/start9/mobile.pcss`, `vector/webAppManifest.ts`, and their tests.
+`res/css/start9/mobile.pcss`, `vector/webAppManifest.ts`, `serviceworker/push.ts`, `utils/push/webPush.ts`,
+`utils/push/protocol.ts`, and their tests.
 
 ## Mobile layout
 
@@ -160,6 +165,27 @@ Rules for it:
 - Verify in Chromium through the DevTools protocol (`Page.getAppManifest` and `Page.getInstallabilityErrors` over a
   Playwright CDP session): headless Chromium never fires `beforeinstallprompt`, so that is the only signal that the
   served manifest passes the install checks.
+
+## Push
+
+`utils/push/webPush.ts` runs from `MatrixClientPeg.start` and keeps one HTTP pusher in step with Element's own
+notification switch: when `web_push` is configured, notifications are enabled and permission is granted, it subscribes
+through the service worker and registers the subscription with the homeserver in the form Sygnal's WebPush pushkin
+expects (the p256dh key as the pushkey, `endpoint` and `auth` in `data`); when the switch goes off it removes both.
+`serviceworker/push.ts` handles `push` and `notificationclick` in upstream's service worker and is written against
+Sygnal's payload. Nothing runs without the config key.
+
+Rules for it:
+
+- The pusher asks Sygnal for `events_only` so a count-only push never reaches the browser: a push that shows no
+  notification costs the site its permission on iOS after a few, and `only_last_per_room` so a burst collapses at
+  the relay. Keep both.
+- The worker shows nothing while a window of the app is visible, and tags notifications by room; the app's own
+  notifications carry the same tag. Keep those two in step or the same message notifies twice.
+- Types for the worker are hand-written in `push.ts`: the project's `lib` has no worker types and upstream's own
+  worker file casts around that too. Don't add `webworker` to `tsconfig.json` for it.
+- Headless Chromium cannot receive a push, so the worker is unit-tested on its exported functions and the whole path
+  is proven on a phone against a deployment with Sygnal.
 
 ## Roadmap
 

@@ -8,6 +8,7 @@ Please see LICENSE files in the repository root for full details.
 import { idbLoad } from "../utils/StorageAccess";
 import { ACCESS_TOKEN_IV, tryDecryptToken } from "../utils/tokens/tokens";
 import { buildAndEncodePickleKey } from "../utils/tokens/pickling";
+import "./push";
 
 const serverSupportMap: {
     [serverUrl: string]: {

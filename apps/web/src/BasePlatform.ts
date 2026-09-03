@@ -211,6 +211,7 @@ export default abstract class BasePlatform {
         const notifBody: NotificationOptions = {
             body: msg,
             silent: true, // we play our own sounds
+            tag: room.roomId,
         };
         if (avatarUrl) notifBody["icon"] = avatarUrl;
         const notification = new window.Notification(title, notifBody);

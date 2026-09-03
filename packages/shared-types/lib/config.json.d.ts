@@ -63,6 +63,12 @@ export interface WebConfigJson {
         theme_color?: string;
         background_color?: string;
     };
+    web_push?: {
+        // a Sygnal WebPush app: its notify URL, app_id, and VAPID public key in base64url
+        gateway_url: string;
+        app_id: string;
+        application_server_key: string;
+    };
 
     force_verification?: boolean; // if true, users must verify new logins
 

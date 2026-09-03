@@ -27,6 +27,7 @@ import SdkConfig from "./SdkConfig";
 import { setDeviceIsolationMode } from "./settings/controllers/DeviceIsolationModeController.ts";
 import { initialiseDehydrationIfEnabled } from "./utils/device/dehydration";
 import { fetchShouldForceDisableEncryption } from "./utils/crypto/fetchShouldForceDisableEncryption";
+import { startWebPush } from "./utils/push/webPush";
 
 export interface MatrixClientPegAssignOpts {
     /**
@@ -348,6 +349,7 @@ class MatrixClientPegClass implements IMatrixClientPeg {
 
         logger.log(`MatrixClientPeg: really starting MatrixClient`);
         await this.matrixClient!.startClient(opts);
+        startWebPush(this.matrixClient!);
         logger.log(`MatrixClientPeg: MatrixClient started`);
     }
 }

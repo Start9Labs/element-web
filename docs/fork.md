@@ -24,6 +24,14 @@ on iOS from Share, then Add to Home Screen. `web_app_manifest` gives the install
 icon; without it the app installs as Element. Once installed, unread counts show on the app icon where the platform
 supports badges.
 
+## Push notifications
+
+With `web_push` configured, a signed-in client that has notifications enabled subscribes to the browser's push
+service and registers a pusher with the homeserver, so messages arrive while the app is closed, through Sygnal's
+WebPush pushkin. The service worker shows the notification, badges the app icon with the unread count, and opens
+the room when it is tapped. Turning notifications off in Element's settings removes the pusher again. iOS delivers
+push only to an app on the Home Screen, so it pairs with the manifest above.
+
 ## Configuration added
 
 All keys are optional; the default is upstream's behaviour.
@@ -38,13 +46,25 @@ All keys are optional; the default is upstream's behaviour.
   root, served by the deployment the same way as `branding.auth_header_logo_url`; when given they also replace the
   favicon and the iOS touch icons. A square PNG of 512px with the mark inside the central 80% works everywhere:
 
-  ```json
-  "web_app_manifest": {
-      "name": "Support",
-      "icons": [{ "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }],
-      "background_color": "#f0f0f0"
-  }
-  ```
+    ```json
+    "web_app_manifest": {
+        "name": "Support",
+        "icons": [{ "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }],
+        "background_color": "#f0f0f0"
+    }
+    ```
+
+- `web_push` (object): `gateway_url` is Sygnal's notify endpoint, `app_id` the app configured there with the WebPush
+  pushkin, and `application_server_key` its VAPID public key in base64url. Sygnal must run alongside the homeserver:
+  the pusher sends it the room name, sender and message text, which it encrypts for the browser.
+
+    ```json
+    "web_push": {
+        "gateway_url": "https://sygnal.example.org/_matrix/push/v1/notify",
+        "app_id": "org.example.chat",
+        "application_server_key": "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U"
+    }
+    ```
 
 - `mobile_builds`: upstream defaults this to Element's app-store listings; the fork defaults it to none. Set it to
   offer native apps on the unsupported-browser page.
