@@ -28,6 +28,13 @@ describe("showIncompatibleBrowser", () => {
     beforeEach(setUpMatrixChatDiv);
 
     it("should match snapshot", async () => {
+        SdkConfig.put({
+            mobile_builds: {
+                ios: "https://apps.apple.com/app/vector/id1083446067",
+                android: "https://play.google.com/store/apps/details?id=im.vector.app",
+                fdroid: "https://f-droid.org/repository/browse/?fdid=im.vector.app",
+            },
+        });
         await showIncompatibleBrowser(vi.fn());
         await screen.findByText("Element does not support this browser");
         expect(document.getElementById("matrixchat")).toMatchSnapshot();
