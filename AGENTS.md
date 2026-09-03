@@ -101,12 +101,36 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
   — a Sessions tab without verification badges, cards, recommendations, filters, or QR sign-in.
 - `components/views/rooms/NewRoomIntro.tsx` — no "encryption isn't enabled" warning in a new DM; upstream already
   hides it once the well-known is known, this covers the first render after login.
+- `viewmodels/menus/UserMenuViewModel.ts` — no "Link new device" in the user menu without crypto.
+- `components/views/rooms/RoomHeader/RoomHeader.tsx` — mounts `BackToRoomListButton`.
+- `vector/index.ts` — imports the mobile stylesheet; no redirect of phone browsers to the native-app page.
 - `.github/workflows/start9.yaml` — the only workflow that runs here.
 
-Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts`, `hooks/useCryptoDisabled.ts`, their tests.
+Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts`, `hooks/useCryptoDisabled.ts`,
+`hooks/usePhoneLayout.ts`, `components/views/rooms/RoomHeader/BackToRoomListButton.tsx`,
+`res/css/start9/mobile.pcss`, and their tests.
+
+## Mobile layout
+
+Phones (`max-width: 767px`) show one pane at a time. `res/css/start9/mobile.pcss` does the layout on its own: it
+reads navigation state off the DOM with `:has()` (a `.mx_RoomView` means a room is open, a `.mx_RightPanel` means a
+card covers it), so `LoggedInView`, `RoomView` and the right panel are untouched. `vector/index.ts` imports it, which
+keeps it outside the `app-web` cascade layer every theme stylesheet lives in; an unlayered rule beats a layered one
+whatever the specificity, so the file never fights upstream's selectors. `!important` is reserved for the pane
+group's inline sizes. The only React is `BackToRoomListButton` in the room header, which shows the home page with
+`context_switch` set so the active space survives, and `usePhoneLayout()`, which shares the breakpoint.
+
+Rules for mobile work:
+
+- Layout goes in that stylesheet, keyed to upstream's structural classes (`mx_MatrixChat`, `mx_LeftPanel_panel`,
+  `mx_RoomView`, `mx_RightPanel_ResizeWrapper`, `mx_Dialog`). Don't reach into component internals; when a rule
+  needs a hook in a component, add one line there and keep the logic in a fork file.
+- Interaction patterns follow Element X; sizes, type and colours are Compound tokens (`--cpd-*`), never literals.
+- Verify by screenshot at a phone viewport against a scratch Synapse before and after, and check a desktop viewport
+  too: the stylesheet must be a no-op above the breakpoint.
 
 ## Roadmap
 
-1. Mobile: drop the native-app redirect and interstitial; a single-pane layout on narrow viewports (room
-   list, timeline, thread panel), touch-sized controls.
+1. Mobile polish: the welcome page at phone width, message actions by tap, composer and keyboard behaviour with
+   `interactive-widget` and safe-area insets, touch-sized room list rows, a space switcher in the list header.
 2. PWA: manifest and icons for the deployment's brand, standalone display, install prompt, iOS meta tags.
