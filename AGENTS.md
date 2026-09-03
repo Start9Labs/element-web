@@ -39,10 +39,10 @@ gh workflow disable <name>
 ## Releasing
 
 Tag `master` as `v<upstream>-start9.<n>`, for example `v1.12.27-start9.1`. The `Start9` workflow publishes
-`ghcr.io/start9labs/element-web:<tag>` and `:latest` for amd64 and arm64; a push to `master` publishes
-`:master` and `:sha-<short>`. `test-support.start9.me` runs `:master` and redeploys itself within minutes of the
-image landing, so every push to `master` is live there. Production deploys by pointing
-`matrix_client_element_container_image` in `ansible-matrix-support` at a tag.
+`ghcr.io/start9labs/element-web:<tag>` and `:latest` for amd64 and arm64 once the test jobs pass; a push to `master`
+publishes `:master` and `:sha-<short>` without waiting for them. `test-support.start9.me` runs `:master` and
+redeploys itself within minutes of the image landing, so every push to `master` is live there. Production deploys
+by pointing `matrix_client_element_container_image` in `ansible-matrix-support` at a tag.
 
 ## Checks
 
