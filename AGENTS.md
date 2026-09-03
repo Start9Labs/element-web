@@ -121,6 +121,8 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
   for the same room replaces it instead of doubling up.
 - `vector/index.html` — the content security policy admits the generated manifest (`manifest-src blob:`).
 - `packages/shared-types/lib/config.json.d.ts` — types for the keys above.
+- `docker/nginx-templates/default.conf.template` (under `apps/web/`) — `sw.js` and `manifest.json` are served
+  `no-cache` like `index.html`, so a deploy replaces the service worker on the next launch rather than within a day.
 - `.github/workflows/start9.yaml` — the only workflow that runs here.
 
 Deployment-specific behaviour is configuration, never code: a key with upstream's behaviour as its default, documented
