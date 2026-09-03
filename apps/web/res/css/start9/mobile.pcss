@@ -1,0 +1,93 @@
+/*
+Copyright 2026 Start9 Labs, Inc.
+
+SPDX-License-Identifier: AGPL-3.0-only OR GPL-3.0-only
+Please see LICENSE files in the repository root for full details.
+*/
+
+/* Phones show one pane at a time: the room list, the room, or the right panel.
+   Imported from the app entry rather than the theme index, so it stays outside the `app-web` cascade layer and
+   overrides upstream's layered rules whatever their specificity; `!important` is only for inline styles.
+   The breakpoint is shared with `usePhoneLayout`; move them together. */
+@media (max-width: 767px) {
+    /* LoggedInView's resizable pane group: no separator, and the visible pane takes the whole width. */
+    .mx_MatrixChat > div > .mx_Separator {
+        display: none;
+    }
+
+    .mx_MatrixChat > div > div:has(> .mx_LeftPanel_panel) {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+    }
+
+    /* A room is open: the space rail and the list step aside. A space home or the home page counts as no room. */
+    .mx_MatrixChat:has(.mx_RoomView) > div > .mx_SpacePanel,
+    .mx_MatrixChat:has(.mx_RoomView) > div > div:has(> .mx_LeftPanel_panel > .mx_LeftPanel_outerWrapper),
+    .mx_MatrixChat:not(:has(.mx_RoomView)) > div > div:has(> .mx_LeftPanel_panel > .mx_RoomView_wrapper) {
+        display: none !important;
+    }
+
+    /* The right panel covers the room instead of splitting it; its cards already carry back and close buttons. */
+    .mx_RightPanel_ResizeWrapper {
+        position: fixed !important;
+        inset: 0;
+        width: auto !important;
+        max-width: none !important;
+        height: auto !important;
+        z-index: 100;
+    }
+
+    .mx_RightPanel_ResizeWrapper .mx_ResizeHandle--horizontal {
+        display: none;
+    }
+
+    /* The welcome and sign-in card fits the width instead of assuming 500px. */
+    .mx_AuthPage_modal {
+        max-width: 100%;
+    }
+
+    .mx_Welcome {
+        padding-inline: var(--cpd-space-4x);
+    }
+
+    .mx_DefaultWelcome .mx_DefaultWelcome_buttons a {
+        width: 100%;
+    }
+
+    /* Dialogs fill the screen. */
+    .mx_Dialog_border {
+        width: 100%;
+        max-width: 100%;
+        height: 100%;
+        max-height: 100%;
+    }
+
+    .mx_Dialog {
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
+        padding: var(--cpd-space-4x);
+    }
+
+    .mx_Dialog_fixedWidth {
+        width: 100%;
+        max-width: none;
+    }
+
+    .mx_Dialog .mx_UserSettingsDialog,
+    .mx_Dialog .mx_RoomSettingsDialog,
+    .mx_Dialog .mx_SpaceSettingsDialog,
+    .mx_Dialog .mx_SpacePreferencesDialog {
+        width: 100%;
+        max-width: none;
+        height: 100%;
+
+        .mx_TabbedView .mx_SettingsTab {
+            min-width: 0;
+            padding-right: var(--cpd-space-4x);
+        }
+    }
+}

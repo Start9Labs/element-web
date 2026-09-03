@@ -12,6 +12,7 @@ Please see LICENSE files in the repository root for full details.
 
 import { logger } from "matrix-js-sdk/src/logger";
 import { shouldPolyfill as shouldPolyFillIntlSegmenter } from "@formatjs/intl-segmenter/should-polyfill.js";
+import "../../res/css/start9/mobile.pcss";
 
 // These are things that can run before the skin loads - be careful not to reference the react-sdk though.
 import { parseAppUrl } from "./url_utils";
@@ -139,23 +140,6 @@ async function start(): Promise<void> {
         await settled(rageshakePromise);
 
         const parsedUrl = parseAppUrl(window.location);
-
-        // don't try to redirect to the native apps if we're
-        // verifying a 3pid (but after we've loaded the config)
-        // or if the user is following a deep link
-        // (https://github.com/element-hq/element-web/issues/7378)
-        const preventRedirect = !!parsedUrl.params.threepid || parsedUrl.location.length > 0;
-
-        if (!preventRedirect) {
-            const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            const isAndroid = /Android/.test(navigator.userAgent);
-            if (isIos || isAndroid) {
-                if (sessionStorage.getItem("skip_mobile_redirect") !== "true") {
-                    window.location.href = "mobile_guide/";
-                    return;
-                }
-            }
-        }
 
         // set the platform for react sdk
         preparePlatform();
