@@ -83,7 +83,10 @@ Rules for a patch, so that upstream merges stay cheap:
 - Prefer adding a line after upstream's block to editing lines inside it. When a wrapper is unavoidable, accept the
   re-indent; the merge procedure above absorbs it.
 - Tests: fork behaviour in a new test file where the setup is small, otherwise one
-  `describe("when crypto is disabled")` in upstream's test that restores any shared mock afterwards.
+  `describe("when crypto is disabled")` in upstream's test that restores any shared mock afterwards. Where an
+  upstream test pins the exact state a patch changes, update its snapshot rather than bending the test; on a merge
+  that conflicts in a `.snap`, take upstream's file, rerun the suite with `-u`, and check the diff shows only fork
+  behaviour.
 - Add every upstream file touched to the list below; a reader diffing against the base tag uses it to tell ours from
   theirs.
 
