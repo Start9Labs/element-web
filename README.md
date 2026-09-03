@@ -1,6 +1,7 @@
 > **Start9 fork.** [Start9Labs/element-web](https://github.com/Start9Labs/element-web) is the client behind
 > `support.start9.me`: upstream Element Web releases with encryption-off, mobile and PWA changes on top.
-> [AGENTS.md](AGENTS.md) says how the fork is maintained. Everything below is upstream's README.
+> [docs/fork.md](docs/fork.md) lists what changes and the configuration it adds; [AGENTS.md](AGENTS.md) says how the
+> fork is maintained. Everything below is upstream's README.
 
 [![Chat](https://img.shields.io/matrix/element-web:matrix.org?logo=matrix)](https://matrix.to/#/#element-web:matrix.org)
 ![Tests](https://github.com/element-hq/element-web/actions/workflows/tests.yaml/badge.svg)

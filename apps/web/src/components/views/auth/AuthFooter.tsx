@@ -32,9 +32,11 @@ const AuthFooter = (): ReactElement => {
     return (
         <footer className="mx_AuthFooter" role="contentinfo">
             {authFooterLinks}
-            <a href="https://matrix.org" target="_blank" rel="noreferrer noopener">
-                {_t("powered_by_matrix")}
-            </a>
+            {brandingConfig?.get("auth_footer_powered_by_matrix") !== false && (
+                <a href="https://matrix.org" target="_blank" rel="noreferrer noopener">
+                    {_t("powered_by_matrix")}
+                </a>
+            )}
         </footer>
     );
 };

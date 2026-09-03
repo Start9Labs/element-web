@@ -111,7 +111,14 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
 - `SdkConfig.ts` — no app-store links by default, so the unsupported-browser page offers none.
 - `webpack.config.ts` — the native-app guide page is not built.
 - `res/manifest.json` (under `apps/web/`) — no related native applications.
+- `components/views/auth/AuthFooter.tsx` — `branding.auth_footer_powered_by_matrix: false` drops the Matrix link.
+- `components/views/auth/PasswordLogin.tsx` and `RegistrationForm.tsx` — `disable_phone_login`; the registration
+  form only promises discovery by email when `UIFeature.identityServer` is on.
+- `packages/shared-types/lib/config.json.d.ts` — types for the keys above.
 - `.github/workflows/start9.yaml` — the only workflow that runs here.
+
+Deployment-specific behaviour is configuration, never code: a key with upstream's behaviour as its default, documented
+in `docs/fork.md`.
 
 Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts`, `hooks/useCryptoDisabled.ts`,
 `hooks/usePhoneLayout.ts`, `components/views/rooms/RoomHeader/BackToRoomListButton.tsx`,

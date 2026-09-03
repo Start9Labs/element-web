@@ -401,9 +401,11 @@ export default class PasswordLogin extends React.PureComponent<IProps, IState> {
                         <option key={LoginField.Email} value={LoginField.Email}>
                             {_t("common|email_address")}
                         </option>
-                        <option key={LoginField.Password} value={LoginField.Password}>
-                            {_t("auth|msisdn_field_label")}
-                        </option>
+                        {!SdkConfig.get().disable_phone_login && (
+                            <option key={LoginField.Password} value={LoginField.Password}>
+                                {_t("auth|msisdn_field_label")}
+                            </option>
+                        )}
                     </Field>
                 </div>
             );

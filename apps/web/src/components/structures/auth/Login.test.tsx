@@ -136,6 +136,15 @@ describe("Login", function () {
         expect(queryByText("Create an account")).not.toBeInTheDocument();
     });
 
+    it("hides the phone option when phone login is disabled", async () => {
+        SdkConfig.add({ disable_phone_login: true });
+        getComponent();
+        await waitForElementToBeRemoved(() => screen.queryAllByLabelText("Loading…"));
+
+        expect(screen.getByRole("option", { name: "Email address" })).toBeTruthy();
+        expect(screen.queryByRole("option", { name: "Phone" })).toBeNull();
+    });
+
     it("should show form without change server link when custom URLs disabled", async () => {
         const { container } = getComponent();
         await waitForElementToBeRemoved(() => screen.queryAllByLabelText("Loading…"));

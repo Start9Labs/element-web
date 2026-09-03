@@ -274,4 +274,24 @@ describe("Registration", function () {
             });
         });
     });
+    describe("email help text", () => {
+        beforeEach(() => {
+            mockClient.registerRequest
+                .mockReset()
+                .mockRejectedValue(new MatrixError({ flows: [{ stages: ["m.login.email.identity"] }] }, 401));
+        });
+
+        it("promises discovery by email when identity servers are enabled", async () => {
+            getComponent();
+            await screen.findByText(/reset your password/);
+            expect(screen.getByText(/discoverable by existing contacts/)).toBeInTheDocument();
+        });
+
+        it("does not promise discovery by email when identity servers are disabled", async () => {
+            SdkConfig.add({ setting_defaults: { "UIFeature.identityServer": false } });
+            getComponent();
+            await screen.findByText(/reset your password/);
+            expect(screen.queryByText(/discoverable by existing contacts/)).not.toBeInTheDocument();
+        });
+    });
 });
