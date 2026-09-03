@@ -64,11 +64,7 @@ export const DEFAULTS = {
         url_win64arm: "https://packages.element.io/desktop/install/win32/arm64/Element%20Setup.exe",
         url_linux: "https://element.io/download#linux",
     },
-    mobile_builds: {
-        ios: "https://apps.apple.com/app/vector/id1083446067",
-        android: "https://play.google.com/store/apps/details?id=im.vector.app",
-        fdroid: "https://f-droid.org/repository/browse/?fdid=im.vector.app",
-    },
+    mobile_builds: {},
 } satisfies ConfigOptions;
 
 export type { ConfigOptions };

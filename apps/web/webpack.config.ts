@@ -166,7 +166,6 @@ export default (env: string, argv: Record<string, any>): webpack.Configuration =
 
         entry: {
             bundle: "./src/vector/index.ts",
-            mobileguide: "./src/vector/mobile_guide/index.ts",
             jitsi: "./src/vector/jitsi/index.ts",
             usercontent: "./src/usercontent/index.ts",
             serviceworker: {
@@ -653,14 +652,6 @@ export default (env: string, argv: Record<string, any>): webpack.Configuration =
                 chunks: ["jitsi"],
             }),
 
-            // This is the mobile guide's entry point (separate for faster mobile loading)
-            new HtmlWebpackPlugin({
-                template: "./src/vector/mobile_guide/index.html",
-                filename: "mobile_guide/index.html",
-                minify: false,
-                chunks: ["mobileguide"],
-            }),
-
             // These are the static error pages for when the javascript env is *really unsupported*
             new HtmlWebpackPlugin({
                 template: "./src/vector/static/unable-to-load.html",
@@ -719,12 +710,6 @@ export default (env: string, argv: Record<string, any>): webpack.Configuration =
                         from: "**",
                         context: path.join(getPackageRoot("@element-hq/element-call-embedded"), "dist"),
                         to: path.join(__dirname, "webapp", "widgets", "element-call"),
-                    },
-                    // Mobile guide assets
-                    {
-                        from: "assets/**",
-                        context: path.resolve(__dirname, "src/vector/mobile_guide"),
-                        to: "mobile_guide",
                     },
                 ],
             }),
