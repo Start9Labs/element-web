@@ -34,6 +34,7 @@ describe("UserMenuViewModel", () => {
         client = getMockClientWithEventEmitter({
             ...mockClientMethodsUser(),
             ...mockClientMethodsServer(),
+            getCrypto: vi.fn(),
             getAuthMetadata: vi.fn().mockRejectedValue(new MatrixError({ errcode: "M_UNRECOGNIZED" }, 404)),
             getExtendedProfileProperty: vi.fn().mockResolvedValue(undefined),
             setExtendedProfileProperty: vi.fn().mockResolvedValue(undefined),
@@ -54,6 +55,15 @@ describe("UserMenuViewModel", () => {
         vi.resetAllMocks();
         SdkConfig.reset();
         SDKContextClass.instance.onLoggedOut();
+    });
+
+    it("only offers to link a new device when crypto is enabled", () => {
+        const without = new UserMenuViewModel({ ownProfileStore: mockOwnProfileStore }, dispatcher, client, true);
+        expect(without.getSnapshot().actions.linkNewDevice).toBe(false);
+
+        client.getCrypto.mockReturnValue({} as any);
+        const withCrypto = new UserMenuViewModel({ ownProfileStore: mockOwnProfileStore }, dispatcher, client, true);
+        expect(withCrypto.getSnapshot().actions.linkNewDevice).toBe(true);
     });
 
     it("should generate a menu options for a logged in client", () => {
