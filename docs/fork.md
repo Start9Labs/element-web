@@ -15,7 +15,8 @@ unaffected. No configuration is needed beyond the well-known.
 
 Below 768px the client shows one pane at a time: the room list, the room, or a right-panel card such as a thread or
 room info, with a back button in the room header. Dialogs and the sign-in, register and forgot-password pages fit
-the screen. Phone browsers are no longer redirected to a native-app page, and the client offers no app-store links.
+the screen. Phone browsers are no longer redirected to a native-app page, the client offers no app-store links, and
+a current phone browser (Chrome, Firefox, Safari, Edge, Samsung Internet) is not warned as unsupported.
 
 ## Installable app
 

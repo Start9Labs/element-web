@@ -47,7 +47,18 @@ describe("SupportedBrowser", () => {
         "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/128.0 Mobile/15E148 Safari/605.1.15",
         // Opera on Samsung
         "Mozilla/5.0 (Linux; Android 10; SM-G970F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.6533.64 Mobile Safari/537.36 OPR/76.2.4027.73374",
-    ])("should warn for mobile browsers", testUserAgentFactory("Browser unsupported, unsupported device type"));
+    ])("should warn for outdated mobile browsers", testUserAgentFactory("Browser unsupported, unsupported user agent"));
+
+    it.each([
+        // Latest Chrome on Android
+        "Mozilla/5.0 (Linux; Android 16; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36",
+        // Latest Firefox on Android
+        "Mozilla/5.0 (Android 16; Mobile; rv:152.0) Gecko/152.0 Firefox/152.0",
+        // Safari 26 on iOS
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
+        // Samsung Internet on Android
+        "Mozilla/5.0 (Linux; Android 16; SM-S938B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/30.0 Chrome/150.0.0.0 Mobile Safari/537.36",
+    ])("should not warn for current mobile browsers", testUserAgentFactory());
 
     it.each([
         // Chrome on Chrome OS

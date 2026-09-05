@@ -116,6 +116,8 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
 - `components/views/auth/PasswordLogin.tsx` and `RegistrationForm.tsx` — `disable_phone_login`; the registration
   form only promises discovery by email when `UIFeature.identityServer` is on.
 - `vector/init.tsx` — applies `web_app_manifest` once the config is loaded.
+- `SupportedBrowser.ts` — phones are a supported device type, Samsung Internet is a supported browser, and
+  "Mobile Safari" is judged as Safari, so a current phone browser gets no "unsupported browser" toast.
 - `serviceworker/index.ts` — imports the push handlers.
 - `BasePlatform.ts` — the client's own notifications carry the room id as their tag, so one from the service worker
   for the same room replaces it instead of doubling up.
