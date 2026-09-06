@@ -50,6 +50,7 @@ import { type IOOBData } from "../../../../stores/ThreepidInviteStore.ts";
 import { MainSplitContentType } from "../../../../contexts/RoomContext.ts";
 import defaultDispatcher from "../../../../dispatcher/dispatcher.ts";
 import { BackToRoomListButton } from "./BackToRoomListButton";
+import { usePhoneLayout } from "../../../../hooks/usePhoneLayout";
 import { RoomSettingsTab } from "../../dialogs/RoomSettingsDialog-tab";
 import { useScopedRoomContext } from "../../../../contexts/ScopedRoomContext.tsx";
 import { ToggleableIcon } from "./toggle/ToggleableIcon.tsx";
@@ -285,11 +286,12 @@ function RoomHeaderButtons({
         voiceCallButton = undefined;
     }
 
-    if (!showVideoCallButton) {
+    const phoneLayout = usePhoneLayout();
+    if (!showVideoCallButton || phoneLayout) {
         videoCallButton = undefined;
     }
 
-    if (!showVoiceCallButton) {
+    if (!showVoiceCallButton || phoneLayout) {
         voiceCallButton = undefined;
     }
 

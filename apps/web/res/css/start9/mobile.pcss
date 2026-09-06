@@ -32,6 +32,9 @@ Please see LICENSE files in the repository root for full details.
     .mx_RightPanel_ResizeWrapper {
         position: fixed !important;
         inset: 0;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
         width: auto !important;
         max-width: none !important;
         height: auto !important;
@@ -98,12 +101,33 @@ Please see LICENSE files in the repository root for full details.
         margin-inline: 0;
     }
 
+    /* No keyboard, no shortcut hint in the search box. */
+    .mx_RoomListPanel kbd {
+        display: none;
+    }
+
+    /* A phone header has room for the name, threads and info; calls are dropped in RoomHeader.tsx. */
+    .mx_RoomHeader .mx_FacePile {
+        display: none;
+    }
+
+    /* Installed on a phone with a notch or home indicator, the app draws under both. */
+    .mx_MatrixChat_wrapper,
+    .mx_AuthPage {
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
     /* Dialogs fill the screen. */
     .mx_Dialog_border {
         width: 100%;
         max-width: 100%;
         height: 100%;
         max-height: 100%;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
     }
 
     .mx_Dialog {

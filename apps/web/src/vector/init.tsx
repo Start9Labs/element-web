@@ -30,6 +30,7 @@ import { initRageshake, initRageshakeStore } from "./rageshakesetup";
 import { ModuleApi } from "../modules/Api.ts";
 import { type URLParams } from "./url_utils.ts";
 import { applyWebAppManifest } from "./webAppManifest";
+import { fitRootToVisualViewport } from "./phoneViewport";
 
 export const rageshakePromise = initRageshake();
 
@@ -85,6 +86,7 @@ export async function loadConfig(): Promise<void> {
         SdkConfig.reset();
     }
     applyWebAppManifest();
+    fitRootToVisualViewport();
 }
 
 export async function loadLanguage(): Promise<void> {
