@@ -223,8 +223,12 @@ async function start(): Promise<void> {
         logger.error(err);
         // Like the compatibility page, AWOOOOOGA at the user
         // This uses the default brand since the app config is unavailable.
+        const stale = err instanceof Error && err.name === "ChunkLoadError";
         await showError(_t("error|misconfigured"), [
-            extractErrorMessageFromError(err, _t("error|app_launch_unexpected_error")),
+            extractErrorMessageFromError(
+                err,
+                stale ? _t("start9|stale_page|startup") : _t("error|app_launch_unexpected_error"),
+            ),
         ]);
     }
 }

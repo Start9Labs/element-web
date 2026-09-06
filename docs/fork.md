@@ -15,8 +15,16 @@ unaffected. No configuration is needed beyond the well-known.
 
 Below 768px the client shows one pane at a time: the room list, the room, or a right-panel card such as a thread or
 room info, with a back button in the room header. Dialogs and the sign-in, register and forgot-password pages fit
-the screen. Phone browsers are no longer redirected to a native-app page, the client offers no app-store links, and
-a current phone browser (Chrome, Firefox, Safari, Edge, Samsung Internet) is not warned as unsupported.
+the screen. The room header keeps the room name, threads and room info and drops the call buttons and member
+avatars; the search box shows no keyboard shortcut. The composer stays above the on-screen keyboard, and an
+installed app keeps clear of the notch and home indicator. Phone browsers are no longer redirected to a native-app
+page, the client offers no app-store links, and a current phone browser (Chrome, Firefox, Safari, Edge, Samsung
+Internet) is not warned as unsupported.
+
+## Stale pages
+
+A page left open across a deploy tells the user it is out of date and how to reload, instead of failing silently the
+next time it needs part of the app it can no longer fetch.
 
 ## Installable app
 

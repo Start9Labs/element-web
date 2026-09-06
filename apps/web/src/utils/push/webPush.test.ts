@@ -13,6 +13,7 @@ import { ClientEvent, type MatrixClient, SyncState } from "matrix-js-sdk/src/mat
 
 import SdkConfig from "../../SdkConfig";
 import SettingsStore from "../../settings/SettingsStore";
+import { SettingLevel } from "../../settings/SettingLevel";
 import PlatformPeg from "../../PlatformPeg";
 import defaultDispatcher from "../../dispatcher/dispatcher";
 import { Action } from "../../dispatcher/actions";
@@ -116,7 +117,7 @@ describe("startWebPush", () => {
         pushManager.getSubscription.mockResolvedValueOnce(null).mockResolvedValue(subscription);
         start();
         const onSettingChange = vi.mocked(SettingsStore.watchSetting).mock.calls[0][2];
-        onSettingChange("notificationsEnabled", null, "device", true, true);
+        onSettingChange("notificationsEnabled", null, SettingLevel.DEVICE, true, true);
         await vi.waitFor(() => expect(client.getPushers).toHaveBeenCalledTimes(2));
         expect(pushManager.subscribe).toHaveBeenCalledTimes(1);
         expect(client.setPusher).toHaveBeenCalledTimes(1);

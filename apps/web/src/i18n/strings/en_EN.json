@@ -3221,6 +3221,15 @@
         "spaces_title": "Spaces you're in",
         "start_group_chat_button": "Start a group chat"
     },
+    "start9": {
+        "stale_page": {
+            "description": "%(brand)s has been updated since this page was opened, so this page no longer works.",
+            "keys": "Reload to get the new version. If it still misbehaves, hard refresh:",
+            "phone": "Reload to get the new version. In the installed app, close it fully and open it again.",
+            "startup": "This page is out of date. Reload it to get the new version; if that does not help, hard refresh with Ctrl+Shift+R, or Cmd+Shift+R on a Mac.",
+            "title": "This page is out of date"
+        }
+    },
     "stickers": {
         "empty": "You don't currently have any stickerpacks enabled",
         "empty_add_prompt": "Add some now"

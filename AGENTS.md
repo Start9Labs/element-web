@@ -11,11 +11,13 @@ up encryption, sends phone browsers to the native apps, and lays out for the des
 
 ## Branches
 
-- `master` is the fork: an upstream release tag with our patches on top. Commit to it directly; a release
-  is a tag, so `master` only ever feeds the `:master` test image.
+- `master` is the fork: an upstream release tag with our patches on top. Work lands through a pull request
+  against it now that production runs a tag cut from it; `master` itself only ever feeds the `:master` test image.
 - Upstream is merged, never rebased, so history stays shared and each release lands as one merge. Merge
   release tags only, never `develop`.
 - `upstream` remote: `git remote add upstream https://github.com/element-hq/element-web.git`.
+- `gh` sees a fork and aims pull requests at element-hq by default; `gh repo set-default Start9Labs/element-web` once
+  per clone, or pass `--repo Start9Labs/element-web`.
 
 ## Taking an upstream release
 
@@ -107,22 +109,27 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
 - `components/views/rooms/NewRoomIntro.tsx` — no "encryption isn't enabled" warning in a new DM; upstream already
   hides it once the well-known is known, this covers the first render after login.
 - `viewmodels/menus/UserMenuViewModel.ts` — no "Link new device" in the user menu without crypto.
-- `components/views/rooms/RoomHeader/RoomHeader.tsx` — mounts `BackToRoomListButton`.
-- `vector/index.ts` — imports the mobile stylesheet; no redirect of phone browsers to the native-app page.
+- `components/views/rooms/RoomHeader/RoomHeader.tsx` — mounts `BackToRoomListButton`; no call buttons on phones, so
+  the room name keeps its width.
+- `vector/index.ts` — imports the mobile stylesheet; no redirect of phone browsers to the native-app page; a chunk
+  that fails to load during start-up is reported as a stale page rather than an unexpected error.
 - `SdkConfig.ts` — no app-store links by default, so the unsupported-browser page offers none.
 - `webpack.config.ts` — the native-app guide page is not built.
 - `res/manifest.json` (under `apps/web/`) — no related native applications.
 - `components/views/auth/AuthFooter.tsx` — `branding.auth_footer_powered_by_matrix: false` drops the Matrix link.
 - `components/views/auth/PasswordLogin.tsx` and `RegistrationForm.tsx` — `disable_phone_login`; the registration
   form only promises discovery by email when `UIFeature.identityServer` is on.
-- `vector/init.tsx` — applies `web_app_manifest` once the config is loaded.
+- `vector/init.tsx` — applies `web_app_manifest` once the config is loaded, starts the visual-viewport fit, and watches
+  for a stale page.
 - `SupportedBrowser.ts` — phones are a supported device type, Samsung Internet is a supported browser, and
   "Mobile Safari" is judged as Safari, so a current phone browser gets no "unsupported browser" toast.
 - `serviceworker/index.ts` — imports the push handlers.
 - `BasePlatform.ts` — the client's own notifications carry the room id as their tag, so one from the service worker
   for the same room replaces it instead of doubling up.
-- `vector/index.html` — the content security policy admits the generated manifest (`manifest-src blob:`).
+- `vector/index.html` — the content security policy admits the generated manifest (`manifest-src blob:`); the
+  viewport meta asks for `viewport-fit=cover` and `interactive-widget=resizes-content`.
 - `packages/shared-types/lib/config.json.d.ts` — types for the keys above.
+- `i18n/strings/en_EN.json` — the fork's strings live under one `start9` key.
 - `docker/nginx-templates/default.conf.template` (under `apps/web/`) — `sw.js` and `manifest.json` are served
   `no-cache` like `index.html`, so a deploy replaces the service worker on the next launch rather than within a day.
 - `.github/workflows/start9.yaml` — the only workflow that runs here.
@@ -132,8 +139,8 @@ in `docs/fork.md`.
 
 Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts`, `hooks/useCryptoDisabled.ts`,
 `hooks/usePhoneLayout.ts`, `components/views/rooms/RoomHeader/BackToRoomListButton.tsx`,
-`res/css/start9/mobile.pcss`, `vector/webAppManifest.ts`, `serviceworker/push.ts`, `utils/push/webPush.ts`,
-`utils/push/protocol.ts`, and their tests.
+`res/css/start9/mobile.pcss`, `vector/webAppManifest.ts`, `vector/phoneViewport.ts`, `vector/stalePage.tsx`,
+`serviceworker/push.ts`, `utils/push/webPush.ts`, `utils/push/protocol.ts`, and their tests.
 
 ## Mobile layout
 
@@ -145,6 +152,12 @@ whatever the specificity, so the file never fights upstream's selectors. `!impor
 group's inline sizes. The only React is `BackToRoomListButton` in the room header, which shows the home page with
 `context_switch` set so the active space survives, and `usePhoneLayout()`, which shares the breakpoint.
 
+The keyboard is handled twice over: `interactive-widget=resizes-content` in the viewport meta makes Chromium shrink
+the layout viewport, and `vector/phoneViewport.ts` does the same by hand for WebKit, which only shrinks the visual
+viewport, by sizing the root to it while it is smaller than the window. `viewport-fit=cover` plus `env(safe-area-inset-*)`
+padding on the app wrapper, the auth page and the fixed overlays keeps an installed app clear of the notch and home
+indicator. Neither can be seen in headless Chromium; they are checked on a phone.
+
 Rules for mobile work:
 
 - Layout goes in that stylesheet, keyed to upstream's structural classes (`mx_MatrixChat`, `mx_LeftPanel_panel`,
@@ -153,6 +166,14 @@ Rules for mobile work:
 - Interaction patterns follow Element X; sizes, type and colours are Compound tokens (`--cpd-*`), never literals.
 - Verify by screenshot at a phone viewport against a scratch Synapse before and after, and check a desktop viewport
   too: the stylesheet must be a no-op above the breakpoint.
+
+## Stale pages
+
+A deploy replaces the build's files, and a page opened before it fails the next time it loads a chunk on demand: on
+the register page that is the password strength check, so Register silently did nothing. `vector/stalePage.tsx`
+turns the first `ChunkLoadError` into a dialog that says the page is out of date, offers Reload, and shows the
+hard-refresh keys for the platform; the same error during start-up gets the same words on the error page. Keep the
+guidance in step with the StartOS docs' hard-refresh instructions.
 
 ## Installable app
 
@@ -193,7 +214,5 @@ Rules for it:
 
 ## Roadmap
 
-1. Mobile polish: message actions by tap, composer and keyboard behaviour with `interactive-widget` and safe-area
-   insets, touch-sized room list rows, a space switcher in the list header.
-2. Install prompt: an in-app "install" entry from `beforeinstallprompt` where the browser fires it, and a one-time
+1. Install prompt: an in-app "install" entry from `beforeinstallprompt` where the browser fires it, and a one-time
    Add to Home Screen hint on iOS Safari.
