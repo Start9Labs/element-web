@@ -16,6 +16,8 @@ up encryption, sends phone browsers to the native apps, and lays out for the des
 - Upstream is merged, never rebased, so history stays shared and each release lands as one merge. Merge
   release tags only, never `develop`.
 - `upstream` remote: `git remote add upstream https://github.com/element-hq/element-web.git`.
+- `gh` sees a fork and aims pull requests at element-hq by default; `gh repo set-default Start9Labs/element-web` once
+  per clone, or pass `--repo Start9Labs/element-web`.
 
 ## Taking an upstream release
 
