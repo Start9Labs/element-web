@@ -13,16 +13,20 @@ import { fitRootToVisualViewport } from "./phoneViewport";
 import UIStore from "../stores/UIStore";
 
 describe("fitRootToVisualViewport", () => {
-    const viewport = { height: 800, listeners: {} as Record<string, () => void> };
+    const viewport = { height: 800, scale: 1, listeners: {} as Record<string, () => void> };
     let phone = true;
 
     beforeEach(() => {
         viewport.height = 800;
+        viewport.scale = 1;
         phone = true;
         UIStore.instance.windowHeight = 800;
         vi.stubGlobal("visualViewport", {
             get height() {
                 return viewport.height;
+            },
+            get scale() {
+                return viewport.scale;
             },
             addEventListener: (type: string, listener: () => void) => {
                 viewport.listeners[type] = listener;
@@ -46,6 +50,14 @@ describe("fitRootToVisualViewport", () => {
         expect(document.documentElement.style.height).toBe("420px");
         expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
         viewport.height = 800;
+        viewport.listeners.resize();
+        expect(document.documentElement.style.height).toBe("");
+    });
+
+    it("ignores a pinch zoom, which also shrinks the visual viewport", () => {
+        fitRootToVisualViewport();
+        viewport.height = 420;
+        viewport.scale = 2;
         viewport.listeners.resize();
         expect(document.documentElement.style.height).toBe("");
     });

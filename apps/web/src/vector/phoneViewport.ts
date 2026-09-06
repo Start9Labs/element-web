@@ -16,7 +16,7 @@ export function fitRootToVisualViewport(): void {
     if (!viewport) return;
     const fit = (): void => {
         const phone = window.matchMedia(PHONE_LAYOUT_QUERY).matches;
-        const keyboardOpen = viewport.height < UIStore.instance.windowHeight - 1;
+        const keyboardOpen = viewport.scale === 1 && viewport.height < UIStore.instance.windowHeight - 1;
         document.documentElement.style.height = phone && keyboardOpen ? `${viewport.height}px` : "";
         if (phone && keyboardOpen) window.scrollTo(0, 0);
     };
