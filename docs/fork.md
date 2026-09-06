@@ -21,6 +21,11 @@ installed app keeps clear of the notch and home indicator. Phone browsers are no
 page, the client offers no app-store links, and a current phone browser (Chrome, Firefox, Safari, Edge, Samsung
 Internet) is not warned as unsupported.
 
+## Stale pages
+
+A page left open across a deploy tells the user it is out of date and how to reload, instead of failing silently the
+next time it needs part of the app it can no longer fetch.
+
 ## Installable app
 
 The client installs as a standalone app: on Android and desktop Chrome or Edge from the address bar or browser menu,

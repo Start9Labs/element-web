@@ -31,6 +31,7 @@ import { ModuleApi } from "../modules/Api.ts";
 import { type URLParams } from "./url_utils.ts";
 import { applyWebAppManifest } from "./webAppManifest";
 import { fitRootToVisualViewport } from "./phoneViewport";
+import { watchForStalePage } from "./stalePage";
 
 export const rageshakePromise = initRageshake();
 
@@ -87,6 +88,7 @@ export async function loadConfig(): Promise<void> {
     }
     applyWebAppManifest();
     fitRootToVisualViewport();
+    watchForStalePage();
 }
 
 export async function loadLanguage(): Promise<void> {

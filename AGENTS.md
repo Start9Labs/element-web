@@ -111,14 +111,16 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
 - `viewmodels/menus/UserMenuViewModel.ts` — no "Link new device" in the user menu without crypto.
 - `components/views/rooms/RoomHeader/RoomHeader.tsx` — mounts `BackToRoomListButton`; no call buttons on phones, so
   the room name keeps its width.
-- `vector/index.ts` — imports the mobile stylesheet; no redirect of phone browsers to the native-app page.
+- `vector/index.ts` — imports the mobile stylesheet; no redirect of phone browsers to the native-app page; a chunk
+  that fails to load during start-up is reported as a stale page rather than an unexpected error.
 - `SdkConfig.ts` — no app-store links by default, so the unsupported-browser page offers none.
 - `webpack.config.ts` — the native-app guide page is not built.
 - `res/manifest.json` (under `apps/web/`) — no related native applications.
 - `components/views/auth/AuthFooter.tsx` — `branding.auth_footer_powered_by_matrix: false` drops the Matrix link.
 - `components/views/auth/PasswordLogin.tsx` and `RegistrationForm.tsx` — `disable_phone_login`; the registration
   form only promises discovery by email when `UIFeature.identityServer` is on.
-- `vector/init.tsx` — applies `web_app_manifest` once the config is loaded, and starts the visual-viewport fit.
+- `vector/init.tsx` — applies `web_app_manifest` once the config is loaded, starts the visual-viewport fit, and watches
+  for a stale page.
 - `SupportedBrowser.ts` — phones are a supported device type, Samsung Internet is a supported browser, and
   "Mobile Safari" is judged as Safari, so a current phone browser gets no "unsupported browser" toast.
 - `serviceworker/index.ts` — imports the push handlers.
@@ -127,6 +129,7 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
 - `vector/index.html` — the content security policy admits the generated manifest (`manifest-src blob:`); the
   viewport meta asks for `viewport-fit=cover` and `interactive-widget=resizes-content`.
 - `packages/shared-types/lib/config.json.d.ts` — types for the keys above.
+- `i18n/strings/en_EN.json` — the fork's strings live under one `start9` key.
 - `docker/nginx-templates/default.conf.template` (under `apps/web/`) — `sw.js` and `manifest.json` are served
   `no-cache` like `index.html`, so a deploy replaces the service worker on the next launch rather than within a day.
 - `.github/workflows/start9.yaml` — the only workflow that runs here.
@@ -136,8 +139,8 @@ in `docs/fork.md`.
 
 Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts`, `hooks/useCryptoDisabled.ts`,
 `hooks/usePhoneLayout.ts`, `components/views/rooms/RoomHeader/BackToRoomListButton.tsx`,
-`res/css/start9/mobile.pcss`, `vector/webAppManifest.ts`, `vector/phoneViewport.ts`, `serviceworker/push.ts`,
-`utils/push/webPush.ts`, `utils/push/protocol.ts`, and their tests.
+`res/css/start9/mobile.pcss`, `vector/webAppManifest.ts`, `vector/phoneViewport.ts`, `vector/stalePage.tsx`,
+`serviceworker/push.ts`, `utils/push/webPush.ts`, `utils/push/protocol.ts`, and their tests.
 
 ## Mobile layout
 
@@ -163,6 +166,14 @@ Rules for mobile work:
 - Interaction patterns follow Element X; sizes, type and colours are Compound tokens (`--cpd-*`), never literals.
 - Verify by screenshot at a phone viewport against a scratch Synapse before and after, and check a desktop viewport
   too: the stylesheet must be a no-op above the breakpoint.
+
+## Stale pages
+
+A deploy replaces the build's files, and a page opened before it fails the next time it loads a chunk on demand: on
+the register page that is the password strength check, so Register silently did nothing. `vector/stalePage.tsx`
+turns the first `ChunkLoadError` into a dialog that says the page is out of date, offers Reload, and shows the
+hard-refresh keys for the platform; the same error during start-up gets the same words on the error page. Keep the
+guidance in step with the StartOS docs' hard-refresh instructions.
 
 ## Installable app
 
