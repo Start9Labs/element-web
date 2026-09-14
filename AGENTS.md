@@ -12,7 +12,7 @@ up encryption, sends phone browsers to the native apps, and lays out for the des
 ## Branches
 
 - `master` is the fork: an upstream release tag with our patches on top. Work lands through a pull request
-  against it now that production runs a tag cut from it; `master` itself only ever feeds the `:master` test image.
+  against it now that production runs a tag cut from it; nothing deploys `master` itself.
 - `e2ee` is `master` without keyless mode, for a homeserver that keeps end-to-end encryption on: the phone, PWA and
   push patches over upstream's own handling of encryption, with the keyless files listed under Patches at upstream's
   version. Everything lands on `master` first and is merged down — `git merge master` on `e2ee`, pushed directly;
@@ -50,9 +50,8 @@ gh workflow disable <name>
 Tag `master` as `v<upstream>-start9.<n>`, for example `v1.12.27-start9.1`, and `e2ee` as `v<upstream>-start9-e2ee.<n>`.
 The `Start9` workflow publishes `ghcr.io/start9labs/element-web:<tag>` for amd64 and arm64 once the test jobs pass,
 plus `:latest` for a `master` tag; a push to `master` or `e2ee` publishes `:<branch>` and `:sha-<short>` without
-waiting for them. `test-support.start9.me` runs `:master` and redeploys itself within minutes of the image landing,
-so every push to `master` is live there. Production deploys by pointing `matrix_client_element_container_image` in
-`ansible-matrix-support` at a tag.
+waiting for them. Production deploys by pointing `matrix_client_element_container_image` in `ansible-matrix-support`
+at a tag.
 
 ## Checks
 
