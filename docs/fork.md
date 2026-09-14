@@ -1,8 +1,8 @@
 # What this fork changes
 
 [Start9Labs/element-web](https://github.com/Start9Labs/element-web) tracks upstream Element Web releases and adds
-what a homeserver that runs without end-to-end encryption needs, plus a phone layout. Nothing here is specific to
-Start9; the deployment choices are configuration.
+a phone layout, an installable app and push notifications, plus what a homeserver that runs without end-to-end
+encryption needs. Nothing here is specific to Start9; the deployment choices are configuration.
 
 ## Keyless mode
 
@@ -10,6 +10,10 @@ When the homeserver's `.well-known/matrix/client` sets `io.element.e2ee.force_di
 crypto, and every screen that would push the user towards encryption, verification, key backup or recovery is
 omitted. Informational hints stay (the composer's open padlock, the "Not encrypted" badge). Keyed homeservers are
 unaffected. No configuration is needed beyond the well-known.
+
+This is the `master` branch, released as `v<upstream>-start9.<n>` and `:latest`. The `e2ee` branch, released as
+`v<upstream>-start9-e2ee.<n>`, carries everything below over upstream's own handling of encryption, for a homeserver
+that keeps it on.
 
 ## Phone layout
 
