@@ -66,7 +66,7 @@ export class UserMenuViewModel
                 createAccount: !isAuthenticated,
                 signIn: !isAuthenticated,
                 openHomePage: hasHomePage,
-                linkNewDevice: isAuthenticated && !!client.getCrypto(),
+                linkNewDevice: isAuthenticated,
                 openSecurity: isAuthenticated,
                 openFeedback: shouldShowFeedback(),
                 openSettings: true,

@@ -17,7 +17,6 @@ import AccessibleButton from "../../elements/AccessibleButton";
 import { SettingsSubsection } from "../shared/SettingsSubsection";
 import { useMatrixClientContext } from "../../../../contexts/MatrixClientContext";
 import { useAsyncMemo } from "../../../../hooks/useAsyncMemo";
-import { useCryptoDisabled } from "../../../../hooks/useCryptoDisabled";
 
 interface IProps {
     onShowQr: () => void;
@@ -37,7 +36,6 @@ const LoginWithQRSection: React.FC<IProps> = ({ onShowQr, isCrossSigningReady })
         [cli, isCrossSigningReady],
         false,
     );
-    if (useCryptoDisabled()) return null;
 
     return (
         <SettingsSubsection heading={_t("settings|sessions|sign_in_with_qr")}>

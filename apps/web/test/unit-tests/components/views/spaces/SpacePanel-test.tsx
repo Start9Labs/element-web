@@ -115,7 +115,6 @@ describe("<SpacePanel />", () => {
         mxcUrlToHttp: jest.fn(),
         getRoom: jest.fn(),
         isGuest: jest.fn(),
-        getCrypto: jest.fn(),
         getAccountData: jest.fn(),
         on: jest.fn(),
         off: jest.fn(),

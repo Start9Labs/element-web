@@ -287,7 +287,6 @@ export default class SecurityUserSettingsTab extends React.Component<EmptyObject
     }
 
     public render(): React.ReactNode {
-        const cryptoEnabled = !!MatrixClientPeg.safeGet().getCrypto();
         const secureBackup = <SecureBackup />;
 
         const eventIndex = (
@@ -297,7 +296,7 @@ export default class SecurityUserSettingsTab extends React.Component<EmptyObject
         );
 
         let warning;
-        if (cryptoEnabled && !privateShouldBeEncrypted(MatrixClientPeg.safeGet())) {
+        if (!privateShouldBeEncrypted(MatrixClientPeg.safeGet())) {
             warning = (
                 <div className="mx_SecurityUserSettingsTab_warning">
                     <WarningIcon />
@@ -374,12 +373,10 @@ export default class SecurityUserSettingsTab extends React.Component<EmptyObject
             <SettingsTab>
                 {warning}
                 <SetIntegrationManager />
-                {cryptoEnabled && (
-                    <SettingsSection heading={_t("settings|security|encryption_section")}>
-                        {secureBackup}
-                        {eventIndex}
-                    </SettingsSection>
-                )}
+                <SettingsSection heading={_t("settings|security|encryption_section")}>
+                    {secureBackup}
+                    {eventIndex}
+                </SettingsSection>
                 {privacySection}
                 {advancedSection}
             </SettingsTab>

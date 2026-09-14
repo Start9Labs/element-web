@@ -23,7 +23,6 @@ import FilteredDeviceListHeader from "./FilteredDeviceListHeader";
 import Spinner from "../../elements/Spinner";
 import { DeviceSecurityLearnMore } from "./DeviceSecurityLearnMore";
 import DeviceTile from "./DeviceTile";
-import { useCryptoDisabled } from "../../../../hooks/useCryptoDisabled";
 
 interface Props {
     devices: DevicesDictionary;
@@ -299,13 +298,6 @@ export const FilteredDeviceList = ({
         },
     ];
 
-    const cryptoDisabled = useCryptoDisabled();
-    const filterOptions = cryptoDisabled
-        ? options.filter(
-              ({ id }) => id !== DeviceSecurityVariation.Verified && id !== DeviceSecurityVariation.Unverified,
-          )
-        : options;
-
     const onFilterOptionChange = (filterId: DeviceFilterKey): void => {
         onFilterChange(filterId === ALL_FILTER_ID ? undefined : filterId);
     };
@@ -357,7 +349,7 @@ export const FilteredDeviceList = ({
                         label={_t("settings|sessions|filter_label")}
                         value={filter || ALL_FILTER_ID}
                         onOptionChange={onFilterOptionChange}
-                        options={filterOptions}
+                        options={options}
                         selectedLabel={_t("action|show")}
                     />
                 )}
