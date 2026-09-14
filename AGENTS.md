@@ -12,7 +12,13 @@ up encryption, sends phone browsers to the native apps, and lays out for the des
 ## Branches
 
 - `master` is the fork: an upstream release tag with our patches on top. Work lands through a pull request
-  against it now that production runs a tag cut from it; `master` itself only ever feeds the `:master` test image.
+  against it now that production runs a tag cut from it; nothing deploys `master` itself.
+- `e2ee` is `master` without keyless mode, for a homeserver that keeps end-to-end encryption on: the phone, PWA and
+  push patches over upstream's own handling of encryption, with the keyless files listed under Patches at upstream's
+  version. Everything lands on `master` first and is merged down — `git merge master` on `e2ee`, pushed directly;
+  never merge `e2ee` into `master`. A conflict in a keyless file resolves to upstream's file at the base tag
+  (`git checkout v1.12.28 -- <file>`), and `git diff v1.12.28 -- <those files>` must come back empty afterwards but
+  for the web push line in `MatrixClientPeg.ts`.
 - Upstream is merged, never rebased, so history stays shared and each release lands as one merge. Merge
   release tags only, never `develop`.
 - `upstream` remote: `git remote add upstream https://github.com/element-hq/element-web.git`.
@@ -27,6 +33,7 @@ git merge -Xignore-space-change v1.12.28   # on master
 pnpm lint:fmt:fix                          # re-indent the blocks a patch wraps
 # resolve what is left, run the checks below
 git push origin master v1.12.28            # the image build reads its version from the nearest tag
+git switch e2ee && git merge master        # keyless files back to upstream's, the checks again, push
 ```
 
 `-Xignore-space-change` lets upstream's edits win inside a block a patch only re-indented; the formatter puts the
@@ -40,11 +47,11 @@ gh workflow disable <name>
 
 ## Releasing
 
-Tag `master` as `v<upstream>-start9.<n>`, for example `v1.12.27-start9.1`. The `Start9` workflow publishes
-`ghcr.io/start9labs/element-web:<tag>` and `:latest` for amd64 and arm64 once the test jobs pass; a push to `master`
-publishes `:master` and `:sha-<short>` without waiting for them. `test-support.start9.me` runs `:master` and
-redeploys itself within minutes of the image landing, so every push to `master` is live there. Production deploys
-by pointing `matrix_client_element_container_image` in `ansible-matrix-support` at a tag.
+Tag `master` as `v<upstream>-start9.<n>`, for example `v1.12.27-start9.1`, and `e2ee` as `v<upstream>-start9-e2ee.<n>`.
+The `Start9` workflow publishes `ghcr.io/start9labs/element-web:<tag>` for amd64 and arm64 once the test jobs pass,
+plus `:latest` for a `master` tag; a push to `master` or `e2ee` publishes `:<branch>` and `:sha-<short>` without
+waiting for them. Production deploys by pointing `matrix_client_element_container_image` in `ansible-matrix-support`
+at a tag.
 
 ## Checks
 
@@ -93,10 +100,9 @@ Rules for a patch, so that upstream merges stay cheap:
 - Add every upstream file touched to the list below; a reader diffing against the base tag uses it to tell ours from
   theirs.
 
-Upstream files carrying a patch (under `apps/web/src/` unless noted):
+Upstream files carrying a keyless patch, on `master` only (under `apps/web/src/`):
 
-- `MatrixClientPeg.ts` — skip crypto initialisation, the only place the well-known decides anything; start web push
-  once the client runs.
+- `MatrixClientPeg.ts` — skip crypto initialisation, the only place the well-known decides anything.
 - `verification.ts` — pending-verification lookup tolerates missing crypto.
 - `device-listener/DeviceListenerCurrentDevice.ts` — no setup-encryption toast when the homeserver force-disables
   encryption and no room is encrypted; covers a session that started while the well-known was unreachable.
@@ -109,6 +115,10 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
 - `components/views/rooms/NewRoomIntro.tsx` — no "encryption isn't enabled" warning in a new DM; upstream already
   hides it once the well-known is known, this covers the first render after login.
 - `viewmodels/menus/UserMenuViewModel.ts` — no "Link new device" in the user menu without crypto.
+
+Upstream files carrying a patch on both branches (under `apps/web/src/` unless noted):
+
+- `MatrixClientPeg.ts` — start web push once the client runs.
 - `components/views/rooms/RoomHeader/RoomHeader.tsx` — mounts `BackToRoomListButton`; no call buttons on phones, so
   the room name keeps its width.
 - `vector/index.ts` — imports the mobile stylesheet; no redirect of phone browsers to the native-app page; a chunk
@@ -137,10 +147,10 @@ Upstream files carrying a patch (under `apps/web/src/` unless noted):
 Deployment-specific behaviour is configuration, never code: a key with upstream's behaviour as its default, documented
 in `docs/fork.md`.
 
-Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts`, `hooks/useCryptoDisabled.ts`,
-`hooks/usePhoneLayout.ts`, `components/views/rooms/RoomHeader/BackToRoomListButton.tsx`,
+Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts` and `hooks/useCryptoDisabled.ts` on `master`
+only; `hooks/usePhoneLayout.ts`, `components/views/rooms/RoomHeader/BackToRoomListButton.tsx`,
 `res/css/start9/mobile.pcss`, `vector/webAppManifest.ts`, `vector/phoneViewport.ts`, `vector/stalePage.tsx`,
-`serviceworker/push.ts`, `utils/push/webPush.ts`, `utils/push/protocol.ts`, and their tests.
+`serviceworker/push.ts`, `utils/push/webPush.ts`, `utils/push/protocol.ts` on both; and their tests.
 
 ## Mobile layout
 

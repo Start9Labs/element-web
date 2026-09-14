@@ -2,7 +2,7 @@ name: Start9
 on:
     workflow_dispatch: {}
     push:
-        branches: [master]
+        branches: [master, e2ee]
         tags: [v*]
     pull_request: {}
 concurrency:
@@ -152,4 +152,7 @@ jobs:
                   password: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Tag the tested image
-              run: docker buildx imagetools create -t "$IMAGE:$GITHUB_REF_NAME" -t "$IMAGE:latest" "$IMAGE:sha-${GITHUB_SHA::7}"
+              run: |
+                  tags=(-t "$IMAGE:$GITHUB_REF_NAME")
+                  [[ $GITHUB_REF_NAME == *-e2ee.* ]] || tags+=(-t "$IMAGE:latest")
+                  docker buildx imagetools create "${tags[@]}" "$IMAGE:sha-${GITHUB_SHA::7}"
