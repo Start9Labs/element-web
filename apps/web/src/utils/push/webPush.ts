@@ -24,19 +24,21 @@ let listening = false;
 let queue = Promise.resolve();
 
 export function startWebPush(client: MatrixClient): void {
+    if (!("PushManager" in window) || !("Notification" in window) || !navigator.serviceWorker) return;
     const config = SdkConfig.get("web_push");
-    if (!config || !("PushManager" in window) || !("Notification" in window) || !navigator.serviceWorker) return;
-    if (!listening) {
-        listening = true;
-        navigator.serviceWorker.addEventListener("message", onServiceWorkerMessage);
-    }
     const sync = (): void => {
         queue = queue
-            .then(() => syncPusher(client, config))
+            .then(() => (config ? syncPusher(client, config) : dropPusher(client)))
             .catch((e) => logger.warn("Web push: could not update the pusher", e));
     };
-    if (settingWatcher) SettingsStore.unwatchSetting(settingWatcher);
-    settingWatcher = SettingsStore.watchSetting("notificationsEnabled", null, sync);
+    if (config) {
+        if (!listening) {
+            listening = true;
+            navigator.serviceWorker.addEventListener("message", onServiceWorkerMessage);
+        }
+        if (settingWatcher) SettingsStore.unwatchSetting(settingWatcher);
+        settingWatcher = SettingsStore.watchSetting("notificationsEnabled", null, sync);
+    }
     client.on(ClientEvent.Sync, (state) => {
         if (state === SyncState.Prepared) sync();
     });
@@ -69,8 +71,21 @@ async function syncPusher(client: MatrixClient, config: WebPushConfig): Promise<
     subscription ??= await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
     const pusher = pusherFor(config, subscription);
     const { pushers } = await client.getPushers();
-    if (pushers.some((it) => it.app_id === pusher.app_id && it.pushkey === pusher.pushkey)) return;
+    const existing = pushers.find((it) => it.app_id === pusher.app_id && it.pushkey === pusher.pushkey);
+    if (existing?.data.url === pusher.data.url) return;
     await client.setPusher(pusher);
+}
+
+async function dropPusher(client: MatrixClient): Promise<void> {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (!subscription) return;
+    const pushkey = subscription.toJSON().keys?.p256dh;
+    const { pushers } = await client.getPushers();
+    for (const pusher of pushers.filter((it) => it.pushkey === pushkey)) {
+        await client.setPusher({ ...pusher, kind: null } as unknown as IPusherRequest);
+    }
+    await subscription.unsubscribe();
 }
 
 function pusherFor(config: WebPushConfig, subscription: PushSubscription): IPusherRequest {
