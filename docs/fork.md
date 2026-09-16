@@ -70,7 +70,9 @@ All keys are optional; the default is upstream's behaviour.
 
 - `web_push` (object): `gateway_url` is Sygnal's notify endpoint, `app_id` the app configured there with the WebPush
   pushkin, and `application_server_key` its VAPID public key in base64url. Sygnal must run alongside the homeserver:
-  the pusher sends it the room name, sender and message text, which it encrypts for the browser.
+  the pusher sends it the room name, sender and message text, which it encrypts for the browser. `homeservers`, when
+  given, lists the hostnames of the homeservers that can reach the gateway; a session on any other homeserver
+  registers no pusher, for a gateway on a private address.
 
     ```json
     "web_push": {

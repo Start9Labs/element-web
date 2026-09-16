@@ -26,12 +26,13 @@ let queue = Promise.resolve();
 export function startWebPush(client: MatrixClient): void {
     if (!("PushManager" in window) || !("Notification" in window) || !navigator.serviceWorker) return;
     const config = SdkConfig.get("web_push");
+    const served = !!config && (!config.homeservers || config.homeservers.includes(hostnameOf(client.baseUrl)));
     const sync = (): void => {
         queue = queue
-            .then(() => (config ? syncPusher(client, config) : dropPusher(client)))
+            .then(() => (served ? syncPusher(client, config) : dropPusher(client)))
             .catch((e) => logger.warn("Web push: could not update the pusher", e));
     };
-    if (config) {
+    if (served) {
         if (!listening) {
             listening = true;
             navigator.serviceWorker.addEventListener("message", onServiceWorkerMessage);
@@ -114,6 +115,14 @@ function pusherFor(config: WebPushConfig, subscription: PushSubscription): IPush
         data,
         append: false,
     };
+}
+
+function hostnameOf(url: string): string {
+    try {
+        return new URL(url).hostname.replace(/^\[(.*)\]$/, "$1");
+    } catch {
+        return "";
+    }
 }
 
 function base64UrlToBytes(value: string): Uint8Array<ArrayBuffer> {
