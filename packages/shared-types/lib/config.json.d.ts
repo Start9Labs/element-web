@@ -68,6 +68,8 @@ export interface WebConfigJson {
         gateway_url: string;
         app_id: string;
         application_server_key: string;
+        // hostnames of the homeservers that can reach the gateway; a session elsewhere registers no pusher
+        homeservers?: string[];
     };
 
     force_verification?: boolean; // if true, users must verify new logins
