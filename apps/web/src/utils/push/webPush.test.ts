@@ -231,6 +231,35 @@ describe("startWebPush", () => {
         expect(SettingsStore.watchSetting).not.toHaveBeenCalled();
     });
 
+    it("detaches the previous session's setting watcher when the next session is not served", async () => {
+        const watchers = new Map<string, Parameters<typeof SettingsStore.watchSetting>[2]>();
+        vi.mocked(SettingsStore.watchSetting).mockImplementation((_name, _room, callback) => {
+            const ref = `watcher-${watchers.size}`;
+            watchers.set(ref, callback);
+            return ref;
+        });
+        vi.mocked(SettingsStore.unwatchSetting).mockImplementation((ref) => {
+            if (ref) watchers.delete(ref);
+        });
+        start();
+        await vi.waitFor(() => expect(client.setPusher).toHaveBeenCalled());
+        expect(watchers.size).toBe(1);
+        vi.mocked(client.setPusher).mockClear();
+
+        SdkConfig.put({
+            ...SdkConfig.get(),
+            web_push: { ...SdkConfig.get("web_push")!, homeservers: ["chat.example.org"] },
+        });
+        startWebPush(client);
+        expect(watchers.size).toBe(0);
+
+        for (const callback of watchers.values()) {
+            callback("notificationsEnabled", null, SettingLevel.DEVICE, true, true);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(client.setPusher).not.toHaveBeenCalled();
+    });
+
     it("leaves a browser without a subscription alone when web_push is gone", async () => {
         SdkConfig.put({ brand: "Support" });
         start();

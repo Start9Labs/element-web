@@ -32,13 +32,11 @@ export function startWebPush(client: MatrixClient): void {
             .then(() => (served ? syncPusher(client, config) : dropPusher(client)))
             .catch((e) => logger.warn("Web push: could not update the pusher", e));
     };
-    if (served) {
-        if (!listening) {
-            listening = true;
-            navigator.serviceWorker.addEventListener("message", onServiceWorkerMessage);
-        }
-        if (settingWatcher) SettingsStore.unwatchSetting(settingWatcher);
-        settingWatcher = SettingsStore.watchSetting("notificationsEnabled", null, sync);
+    if (settingWatcher) SettingsStore.unwatchSetting(settingWatcher);
+    settingWatcher = served ? SettingsStore.watchSetting("notificationsEnabled", null, sync) : undefined;
+    if (served && !listening) {
+        listening = true;
+        navigator.serviceWorker.addEventListener("message", onServiceWorkerMessage);
     }
     client.on(ClientEvent.Sync, (state) => {
         if (state === SyncState.Prepared) sync();
