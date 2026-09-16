@@ -126,12 +126,41 @@ describe("startWebPush", () => {
     it("keeps a pusher that already matches the subscription", async () => {
         pushManager.getSubscription.mockResolvedValue(subscription);
         vi.mocked(client.getPushers).mockResolvedValue({
-            pushers: [{ app_id: "org.example.chat", pushkey: "P256DH" } as never],
+            pushers: [
+                {
+                    app_id: "org.example.chat",
+                    pushkey: "P256DH",
+                    data: { url: "https://sygnal.example.org/_matrix/push/v1/notify" },
+                } as never,
+            ],
         });
         start();
         await vi.waitFor(() => expect(client.getPushers).toHaveBeenCalled());
         expect(pushManager.subscribe).not.toHaveBeenCalled();
         expect(client.setPusher).not.toHaveBeenCalled();
+    });
+
+    it("re-registers a pusher whose gateway moved", async () => {
+        pushManager.getSubscription.mockResolvedValue(subscription);
+        vi.mocked(client.getPushers).mockResolvedValue({
+            pushers: [
+                {
+                    app_id: "org.example.chat",
+                    pushkey: "P256DH",
+                    data: { url: "https://old.example.org/_matrix/push/v1/notify" },
+                } as never,
+            ],
+        });
+        start();
+        await vi.waitFor(() => expect(client.setPusher).toHaveBeenCalled());
+        expect(pushManager.subscribe).not.toHaveBeenCalled();
+        expect(client.setPusher).toHaveBeenCalledWith(
+            expect.objectContaining({
+                kind: "http",
+                pushkey: "P256DH",
+                data: expect.objectContaining({ url: "https://sygnal.example.org/_matrix/push/v1/notify" }),
+            }),
+        );
     });
 
     it("renews a subscription made with another key", async () => {
@@ -173,12 +202,30 @@ describe("startWebPush", () => {
         expect(SettingsStore.watchSetting).toHaveBeenCalledWith("notificationsEnabled", null, expect.any(Function));
     });
 
-    it("does nothing without web_push", async () => {
+    it("leaves a browser without a subscription alone when web_push is gone", async () => {
         SdkConfig.put({ brand: "Support" });
-        startWebPush(client);
-        await new Promise((resolve) => setTimeout(resolve, 0));
-        expect(client.on).not.toHaveBeenCalled();
-        expect(pushManager.getSubscription).not.toHaveBeenCalled();
+        start();
+        await vi.waitFor(() => expect(pushManager.getSubscription).toHaveBeenCalled());
         expect(SettingsStore.watchSetting).not.toHaveBeenCalled();
+        expect(client.getPushers).not.toHaveBeenCalled();
+        expect(client.setPusher).not.toHaveBeenCalled();
+    });
+
+    it("removes the pusher and subscription once web_push is gone", async () => {
+        SdkConfig.put({ brand: "Support" });
+        pushManager.getSubscription.mockResolvedValue(subscription);
+        vi.mocked(client.getPushers).mockResolvedValue({
+            pushers: [
+                { app_id: "org.example.chat", pushkey: "P256DH", data: { url: "https://old.example.org" } } as never,
+                { app_id: "org.example.chat", pushkey: "OTHER", data: { url: "https://old.example.org" } } as never,
+            ],
+        });
+        start();
+        await vi.waitFor(() => expect(subscription.unsubscribe).toHaveBeenCalled());
+        expect(client.setPusher).toHaveBeenCalledTimes(1);
+        expect(client.setPusher).toHaveBeenCalledWith(
+            expect.objectContaining({ kind: null, app_id: "org.example.chat", pushkey: "P256DH" }),
+        );
+        expect(pushManager.subscribe).not.toHaveBeenCalled();
     });
 });

@@ -42,8 +42,9 @@ supports badges.
 With `web_push` configured, a signed-in client that has notifications enabled subscribes to the browser's push
 service and registers a pusher with the homeserver, so messages arrive while the app is closed, through Sygnal's
 WebPush pushkin. The service worker shows the notification, badges the app icon with the unread count, and opens
-the room when it is tapped. Turning notifications off in Element's settings removes the pusher again. iOS delivers
-push only to an app on the Home Screen, so it pairs with the manifest above.
+the room when it is tapped. Turning notifications off in Element's settings removes the pusher again, as does a
+deployment that drops `web_push`; a changed `gateway_url` is re-registered on the next launch. iOS delivers push only
+to an app on the Home Screen, so it pairs with the manifest above.
 
 ## Configuration added
 
