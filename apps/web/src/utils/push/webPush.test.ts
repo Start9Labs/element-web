@@ -39,6 +39,7 @@ describe("startWebPush", () => {
         }),
     };
     const client = {
+        baseUrl: "https://matrix.example.org",
         getPushers: vi.fn(),
         setPusher: vi.fn().mockResolvedValue({}),
         on: vi.fn(),
@@ -200,6 +201,63 @@ describe("startWebPush", () => {
         await new Promise((resolve) => setTimeout(resolve, 0));
         expect(pushManager.getSubscription).not.toHaveBeenCalled();
         expect(SettingsStore.watchSetting).toHaveBeenCalledWith("notificationsEnabled", null, expect.any(Function));
+    });
+
+    it("registers a pusher when the gateway serves the session's homeserver", async () => {
+        SdkConfig.put({
+            ...SdkConfig.get(),
+            web_push: { ...SdkConfig.get("web_push")!, homeservers: ["matrix.example.org"] },
+        });
+        start();
+        await vi.waitFor(() => expect(client.setPusher).toHaveBeenCalled());
+        expect(pushManager.subscribe).toHaveBeenCalled();
+    });
+
+    it("treats a homeserver the gateway does not serve as unconfigured", async () => {
+        SdkConfig.put({
+            ...SdkConfig.get(),
+            web_push: { ...SdkConfig.get("web_push")!, homeservers: ["chat.example.org"] },
+        });
+        pushManager.getSubscription.mockResolvedValue(subscription);
+        vi.mocked(client.getPushers).mockResolvedValue({
+            pushers: [
+                { app_id: "org.example.chat", pushkey: "P256DH", data: { url: "https://old.example.org" } } as never,
+            ],
+        });
+        start();
+        await vi.waitFor(() => expect(subscription.unsubscribe).toHaveBeenCalled());
+        expect(client.setPusher).toHaveBeenCalledWith(expect.objectContaining({ kind: null, pushkey: "P256DH" }));
+        expect(pushManager.subscribe).not.toHaveBeenCalled();
+        expect(SettingsStore.watchSetting).not.toHaveBeenCalled();
+    });
+
+    it("detaches the previous session's setting watcher when the next session is not served", async () => {
+        const watchers = new Map<string, Parameters<typeof SettingsStore.watchSetting>[2]>();
+        vi.mocked(SettingsStore.watchSetting).mockImplementation((_name, _room, callback) => {
+            const ref = `watcher-${watchers.size}`;
+            watchers.set(ref, callback);
+            return ref;
+        });
+        vi.mocked(SettingsStore.unwatchSetting).mockImplementation((ref) => {
+            if (ref) watchers.delete(ref);
+        });
+        start();
+        await vi.waitFor(() => expect(client.setPusher).toHaveBeenCalled());
+        expect(watchers.size).toBe(1);
+        vi.mocked(client.setPusher).mockClear();
+
+        SdkConfig.put({
+            ...SdkConfig.get(),
+            web_push: { ...SdkConfig.get("web_push")!, homeservers: ["chat.example.org"] },
+        });
+        startWebPush(client);
+        expect(watchers.size).toBe(0);
+
+        for (const callback of watchers.values()) {
+            callback("notificationsEnabled", null, SettingLevel.DEVICE, true, true);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(client.setPusher).not.toHaveBeenCalled();
     });
 
     it("leaves a browser without a subscription alone when web_push is gone", async () => {
