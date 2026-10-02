@@ -48,6 +48,7 @@ import { AuthHeaderProvider } from "./header/AuthHeaderProvider";
 import SettingsStore from "../../../settings/SettingsStore";
 import { type ValidatedServerConfig } from "../../../utils/ValidatedServerConfig";
 import { startOAuthLogin } from "../../../utils/oauth/authorize";
+import { registrationMovedNotice } from "../../views/auth/RegistrationMoved";
 
 const debuglog = (...args: any[]): void => {
     if (SettingsStore.getValue("debug_registration")) {
@@ -295,7 +296,7 @@ export default class Registration extends React.Component<IProps, IState> {
                 } else {
                     this.setState({
                         serverErrorIsFatal: true, // fatal because user cannot continue on this server
-                        errorText: _t("auth|registration_disabled"),
+                        errorText: registrationMovedNotice() ?? _t("auth|registration_disabled"),
                         // add empty flows array to get rid of spinner
                         flows: [],
                     });

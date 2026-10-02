@@ -3222,6 +3222,11 @@
         "start_group_chat_button": "Start a group chat"
     },
     "start9": {
+        "registration_moved": {
+            "description": "Start9 support is now at %(host)s. Create your account there with your access code.",
+            "link": "Sign up at %(host)s",
+            "title": "Support has moved"
+        },
         "stale_page": {
             "description": "%(brand)s has been updated since this page was opened, so this page no longer works.",
             "keys": "Reload to get the new version. If it still misbehaves, hard refresh:",

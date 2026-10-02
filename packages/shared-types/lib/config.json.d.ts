@@ -63,6 +63,10 @@ export interface WebConfigJson {
         theme_color?: string;
         background_color?: string;
     };
+    registration_moved?: {
+        // where sign-up lives now; shown on the register page when the homeserver has registration disabled
+        url: string;
+    };
     web_push?: {
         // a Sygnal WebPush app: its notify URL, app_id, and VAPID public key in base64url
         gateway_url: string;
