@@ -129,6 +129,8 @@ Upstream files carrying a patch on both branches (under `apps/web/src/` unless n
 - `components/views/auth/AuthFooter.tsx` — `branding.auth_footer_powered_by_matrix: false` drops the Matrix link.
 - `components/views/auth/PasswordLogin.tsx` and `RegistrationForm.tsx` — `disable_phone_login`; the registration
   form only promises discovery by email when `UIFeature.identityServer` is on.
+- `components/structures/auth/Registration.tsx` — `registration_moved` replaces the registration-disabled error with
+  a link to where sign-up lives now.
 - `vector/init.tsx` — applies `web_app_manifest` once the config is loaded, starts the visual-viewport fit, and watches
   for a stale page.
 - `SupportedBrowser.ts` — phones are a supported device type, Samsung Internet is a supported browser, and
@@ -149,6 +151,7 @@ in `docs/fork.md`.
 
 Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts` and `hooks/useCryptoDisabled.ts` on `master`
 only; `hooks/usePhoneLayout.ts`, `components/views/rooms/RoomHeader/BackToRoomListButton.tsx`,
+`components/views/auth/RegistrationMoved.tsx`,
 `res/css/start9/mobile.pcss`, `vector/webAppManifest.ts`, `vector/phoneViewport.ts`, `vector/stalePage.tsx`,
 `serviceworker/push.ts`, `utils/push/webPush.ts`, `utils/push/protocol.ts` on both; and their tests.
 

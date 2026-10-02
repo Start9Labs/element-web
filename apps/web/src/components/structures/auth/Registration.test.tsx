@@ -274,6 +274,29 @@ describe("Registration", function () {
             });
         });
     });
+    describe("when registration is disabled", () => {
+        beforeEach(() => {
+            mockClient.registerRequest.mockReset().mockRejectedValue(new MatrixError({ errcode: "M_FORBIDDEN" }, 403));
+        });
+
+        it("says so without registration_moved", async () => {
+            getComponent();
+            expect(await screen.findByText("Registration has been disabled on this homeserver.")).toBeInTheDocument();
+            expect(screen.queryByText("Support has moved")).not.toBeInTheDocument();
+        });
+
+        it("points at the new sign-up with registration_moved", async () => {
+            SdkConfig.add({ registration_moved: { url: "https://support.example.com/signup" } });
+            getComponent();
+            expect(await screen.findByText("Support has moved")).toBeInTheDocument();
+            expect(screen.getByRole("link", { name: "Sign up at support.example.com" })).toHaveAttribute(
+                "href",
+                "https://support.example.com/signup",
+            );
+            expect(screen.queryByText("Registration has been disabled on this homeserver.")).not.toBeInTheDocument();
+        });
+    });
+
     describe("email help text", () => {
         beforeEach(() => {
             mockClient.registerRequest
