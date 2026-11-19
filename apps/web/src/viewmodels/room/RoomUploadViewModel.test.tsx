@@ -8,10 +8,16 @@
 // @vitest-environment happy-dom
 
 import React from "react";
-import { type IEventRelation, type MatrixClient, type Room, RoomEvent } from "matrix-js-sdk/src/matrix";
+import {
+    type IEventRelation,
+    type MatrixClient,
+    type MatrixEvent,
+    type Room,
+    RoomEvent,
+} from "matrix-js-sdk/src/matrix";
 import { render } from "test-utils-rtl";
-import { vi, describe, it, expect, beforeEach, afterAll, type MockedObject } from "vitest";
-import { getRoomContext, mkEvent, mkStubRoom, stubClient } from "test-utils";
+import { vi, describe, it, expect, beforeEach, afterEach, afterAll, type MockedObject } from "vitest";
+import { getRoomContext, mkEvent, mkStubRoom, stubClient, tearDownAfterTest } from "test-utils";
 
 import { RoomUploadContextProvider, RoomUploadViewModel } from "./RoomUploadViewModel";
 import { TimelineRenderingType } from "../../contexts/RoomContext";
@@ -22,6 +28,7 @@ import type { ComposerInsertFilesPayload } from "../../dispatcher/payloads/Compo
 import { ScopedRoomContextProvider } from "../../contexts/ScopedRoomContext";
 import { Action } from "../../dispatcher/actions";
 import MatrixClientContext from "../../contexts/MatrixClientContext";
+import { PosthogAnalytics } from "../../PosthogAnalytics";
 
 const sendContentListToRoomSpy = vi.spyOn(ContentMessages.sharedInstance(), "sendContentListToRoom");
 
@@ -52,6 +59,7 @@ describe("RoomUploadViewModel", () => {
             undefined,
             () => {},
         );
+        tearDownAfterTest(vm);
         expect(vm.getSnapshot().options).toHaveLength(maySendMessage ? 1 : 0);
         room.maySendMessage.mockReturnValue(!maySendMessage);
         room.emit(RoomEvent.CurrentStateUpdated, room, null as any, null as any);
@@ -73,6 +81,7 @@ describe("RoomUploadViewModel", () => {
             () => {},
             compApi,
         );
+        tearDownAfterTest(vm);
         const onSelected = vi.fn();
         const icon = { myicon: 5 } as any;
         compApi.addFileUploadOption({
@@ -81,7 +90,11 @@ describe("RoomUploadViewModel", () => {
             icon,
             onSelected,
         });
-        expect(vm.getSnapshot().options).toContainEqual({ type: "org.example.test", label: "My uploader", icon });
+        // The module option must appear exactly once, alongside the built-in local option.
+        expect(vm.getSnapshot().options).toEqual([
+            expect.objectContaining({ type: "local" }),
+            { type: "org.example.test", label: "My uploader", icon },
+        ]);
         vm.onUploadOptionSelected("org.example.test");
         expect(onSelected).toHaveBeenCalledWith(
             room.roomId,
@@ -105,6 +118,7 @@ describe("RoomUploadViewModel", () => {
                 undefined,
                 () => {},
             );
+            tearDownAfterTest(vm);
             await vm.initiateViaInputFiles([] as unknown as FileList);
             expect(dis.dispatch).toHaveBeenCalledWith({ action: "require_registration" });
         });
@@ -118,6 +132,7 @@ describe("RoomUploadViewModel", () => {
                 undefined,
                 () => {},
             );
+            tearDownAfterTest(vm);
             await vm.initiateViaInputFiles([] as unknown as FileList);
             expect(dis.dispatch).not.toHaveBeenCalled();
         });
@@ -132,6 +147,7 @@ describe("RoomUploadViewModel", () => {
                 undefined,
                 () => {},
             );
+            tearDownAfterTest(vm);
             const replyEvent = mkEvent({ event: true, type: "anything", user: "anyone", content: {} });
             vm.setReplyToEvent(replyEvent);
             const threadRelation: IEventRelation = { key: "foo" };
@@ -167,6 +183,7 @@ describe("RoomUploadViewModel", () => {
                 undefined,
                 () => {},
             );
+            tearDownAfterTest(vm);
             await vm.initiateViaDataTransfer({} as DataTransfer);
             expect(dis.dispatch).toHaveBeenCalledWith({ action: "require_registration" });
         });
@@ -180,6 +197,7 @@ describe("RoomUploadViewModel", () => {
                 undefined,
                 () => {},
             );
+            tearDownAfterTest(vm);
             await vm.initiateViaDataTransfer({ files: [] as unknown as FileList } as DataTransfer);
             expect(dis.dispatch).not.toHaveBeenCalled();
         });
@@ -194,6 +212,7 @@ describe("RoomUploadViewModel", () => {
                 undefined,
                 () => {},
             );
+            tearDownAfterTest(vm);
             const replyEvent = mkEvent({ event: true, type: "anything", user: "anyone", content: {} });
             vm.setReplyToEvent(replyEvent);
             const threadRelation: IEventRelation = { key: "foo" };
@@ -252,6 +271,77 @@ describe("RoomUploadViewModel", () => {
                 client,
                 TimelineRenderingType.Room,
             );
+        });
+    });
+
+    describe("analytics", () => {
+        let trackEvent: ReturnType<typeof vi.spyOn>;
+
+        beforeEach(() => {
+            trackEvent = vi.spyOn(PosthogAnalytics.instance, "trackEvent").mockImplementation(() => {});
+        });
+
+        afterEach(() => {
+            trackEvent.mockRestore();
+        });
+
+        function createVm(
+            openUploadDialog: () => void,
+            replyToEvent?: MatrixEvent,
+            threadRelation?: IEventRelation,
+            timelineRenderingType = TimelineRenderingType.Room,
+        ): RoomUploadViewModel {
+            const vm = new RoomUploadViewModel(
+                room,
+                client,
+                timelineRenderingType,
+                dis,
+                replyToEvent,
+                threadRelation,
+                openUploadDialog,
+            );
+            return tearDownAfterTest(vm);
+        }
+
+        it("tracks AttachmentOpen and invokes the upload function when 'local' is selected", () => {
+            const openUploadDialog = vi.fn();
+            const vm = createVm(openUploadDialog);
+            vm.onUploadOptionSelected("local");
+
+            expect(trackEvent).toHaveBeenCalledWith({
+                eventName: "AttachmentOpen",
+                isReply: false,
+                inThread: false,
+                kind: "local",
+            });
+            expect(openUploadDialog).toHaveBeenCalled();
+        });
+
+        it("marks the attachment as a reply and in-thread when applicable", () => {
+            const replyToEvent = mkEvent({ event: true, type: "anything", user: "anyone", content: {} });
+            const vm = createVm(vi.fn(), replyToEvent, { rel_type: "m.thread" });
+
+            vm.onUploadOptionSelected("local");
+
+            expect(trackEvent).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventName: "AttachmentOpen",
+                    isReply: true,
+                    inThread: true,
+                }),
+            );
+        });
+
+        it("throws for unknown upload types and does not track anything", () => {
+            const vm = createVm(vi.fn());
+            expect(() => vm.onUploadOptionSelected("unknown-module-type")).toThrow();
+            expect(trackEvent).not.toHaveBeenCalled();
+        });
+
+        it("throws when the timeline rendering type is not Room or Thread", () => {
+            const vm = createVm(vi.fn(), undefined, undefined, TimelineRenderingType.File);
+            expect(() => vm.onUploadOptionSelected("local")).toThrow("TimelineRenderingType must be Room or Thread");
+            expect(trackEvent).not.toHaveBeenCalled();
         });
     });
 });

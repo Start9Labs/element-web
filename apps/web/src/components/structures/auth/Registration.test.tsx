@@ -149,7 +149,7 @@ describe("Registration", function () {
         getComponent();
 
         await expect(
-            screen.findAllByText("Too many attempts in a short time. Wait some time before trying again."),
+            screen.findAllByText("Too many attempts in a short time. Wait a moment before trying again."),
         ).resolves.not.toHaveLength(0);
         expect(await screen.findByRole("button", { name: "Continue" })).toHaveAttribute("aria-disabled", "true");
     });
@@ -281,7 +281,9 @@ describe("Registration", function () {
 
         it("says so without registration_moved", async () => {
             getComponent();
-            expect(await screen.findByText("Registration has been disabled on this homeserver.")).toBeInTheDocument();
+            expect(
+                await screen.findByText("Registration has been disabled by this account provider."),
+            ).toBeInTheDocument();
             expect(screen.queryByText("Support has moved")).not.toBeInTheDocument();
         });
 
@@ -293,7 +295,9 @@ describe("Registration", function () {
                 "href",
                 "https://support.example.com/signup",
             );
-            expect(screen.queryByText("Registration has been disabled on this homeserver.")).not.toBeInTheDocument();
+            expect(
+                screen.queryByText("Registration has been disabled by this account provider."),
+            ).not.toBeInTheDocument();
         });
     });
 

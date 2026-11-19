@@ -29,7 +29,7 @@ import React, {
     useRef,
     useState,
 } from "react";
-import sanitizeHtml from "sanitize-html";
+import { copyPlainTextToClipboard, sanitizeHtml } from "@element-hq/element-web-shared-utils";
 import {
     ChatIcon,
     RoomIcon,
@@ -76,7 +76,6 @@ import { DirectoryMember, type Member, startDmOnFirstMessage } from "../../../..
 import DMRoomMap from "../../../../utils/DMRoomMap";
 import { makeUserPermalink } from "../../../../utils/permalinks/Permalinks";
 import { buildActivityScores, buildMemberScores, compareMembers } from "../../../../utils/SortMembers";
-import { copyPlaintext } from "../../../../utils/strings";
 import BaseAvatar from "../../avatars/BaseAvatar";
 import DecoratedRoomAvatar from "../../avatars/DecoratedRoomAvatar";
 import { SearchResultAvatar } from "../../avatars/SearchResultAvatar";
@@ -525,7 +524,7 @@ const SpotlightDialog: React.FC<IProps> = ({ initialText = "", initialFilter = n
         _setQuery(newQuery);
     };
     useEffect(() => {
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
             const node = rovingContext.state.nodes[0];
             if (node) {
                 rovingContext.dispatch({
@@ -537,6 +536,7 @@ const SpotlightDialog: React.FC<IProps> = ({ initialText = "", initialFilter = n
                 });
             }
         });
+        return () => clearTimeout(timeout);
         // we intentionally ignore changes to the rovingContext for the purpose of this hook
         // we only want to reset the focus whenever the results or filters change
         // oxlint-disable-next-line react-hooks/exhaustive-deps
@@ -979,7 +979,7 @@ const SpotlightDialog: React.FC<IProps> = ({ initialText = "", initialFilter = n
                         className="mx_SpotlightDialog_inviteLink"
                         onClick={() => {
                             setInviteLinkCopied(true);
-                            void copyPlaintext(ownInviteLink);
+                            void copyPlainTextToClipboard(ownInviteLink);
                         }}
                         onTooltipOpenChange={(open) => {
                             if (!open) setInviteLinkCopied(false);
@@ -1040,8 +1040,32 @@ const SpotlightDialog: React.FC<IProps> = ({ initialText = "", initialFilter = n
             );
         }
 
+        // The shortcuts below the results are options in their own right, so with nothing above them
+        // the first one is selected by default and enter drops the user into a filter they never
+        // asked for. Saying there are no results gives that default selection somewhere harmless to
+        // land, and the shortcuts are still an arrow key away.
+        let noResultsSection: JSX.Element | undefined;
+        const hasResults =
+            !!results[Section.People].length ||
+            (filter === Filter.People && !!results[Section.Suggestions].length) ||
+            !!results[Section.Rooms].length ||
+            !!results[Section.Spaces].length ||
+            !!results[Section.PublicRoomsAndSpaces].length ||
+            !!spaceResults.length ||
+            !!joinRoomSection;
+        if (trimmedQuery && !hasResults) {
+            noResultsSection = (
+                <div className="mx_SpotlightDialog_section mx_SpotlightDialog_results" role="group">
+                    <Option id="mx_SpotlightDialog_button_noResults" onClick={null}>
+                        {_t("spotlight_dialog|no_results")}
+                    </Option>
+                </div>
+            );
+        }
+
         content = (
             <>
+                {noResultsSection}
                 {peopleSection}
                 {suggestionsSection}
                 {roomsSection}

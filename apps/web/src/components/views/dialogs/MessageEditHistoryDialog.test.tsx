@@ -10,7 +10,7 @@ Please see LICENSE files in the repository root for full details.
 
 import React from "react";
 import { render, type RenderResult, waitForElementToBeRemoved } from "test-utils-rtl";
-import { flushPromises, mkMessage, mockIntlDateTimeFormat, stubClient } from "test-utils";
+import { flushPromises, mkMessage, stubClient, TestSDKContext } from "test-utils";
 import { EventType, MatrixEvent } from "matrix-js-sdk/src/matrix";
 import { vi, describe, it, expect, beforeEach, type Mocked } from "vitest";
 
@@ -33,9 +33,7 @@ describe("<MessageEditHistory />", () => {
             room: "!room:example.com",
             msg: "My Great Message",
         });
-        sdkContext = new SDKContextClass();
-
-        mockIntlDateTimeFormat(undefined, "UTC");
+        sdkContext = new TestSDKContext();
     });
 
     async function renderComponent(): Promise<RenderResult> {

@@ -9,7 +9,7 @@ Please see LICENSE files in the repository root for full details.
 // @vitest-environment happy-dom
 
 import React from "react";
-import { vi, describe, it, expect, beforeEach, type Mocked } from "vitest";
+import { vi, describe, it, expect, beforeEach, afterEach, type Mocked } from "vitest";
 import { act, render, screen } from "test-utils-rtl";
 import userEvent from "@testing-library/user-event";
 import { type MatrixClient } from "matrix-js-sdk/src/matrix";
@@ -24,6 +24,7 @@ import { DeviceListener } from "../device-listener";
 import Modal from "../Modal";
 import ConfirmKeyStorageOffDialog from "../components/views/dialogs/ConfirmKeyStorageOffDialog";
 import SetupEncryptionDialog from "../components/views/dialogs/security/SetupEncryptionDialog";
+import { ChangeRecoveryKeyDialog } from "../components/views/dialogs/security/ChangeRecoveryKeyDialog";
 import { stubClient } from "test-utils";
 
 vi.mock("../dispatcher/dispatcher", () => ({
@@ -36,8 +37,11 @@ vi.mock("../dispatcher/dispatcher", () => ({
 
 describe("SetupEncryptionToast", () => {
     beforeEach(() => {
-        vi.resetAllMocks();
         render(<ToastContainer />);
+    });
+
+    afterEach(() => {
+        vi.resetAllMocks();
     });
 
     describe("Back up your chats", () => {
@@ -47,6 +51,17 @@ describe("SetupEncryptionToast", () => {
             expect(await screen.findByRole("heading", { name: "Back up your chats" })).toBeInTheDocument();
         });
 
+        it("should open the recovery setup dialog when 'Create recovery key' clicked", async () => {
+            vi.spyOn(Modal, "createDialog").mockReturnValue({ finished: Promise.resolve([]) } as any);
+
+            act(() => showToast("set_up_recovery"));
+
+            const user = userEvent.setup();
+            await user.click(await screen.findByRole("button", { name: "Create recovery key" }));
+
+            expect(Modal.createDialog).toHaveBeenCalledWith(ChangeRecoveryKeyDialog, { userHasRecoveryKey: false });
+        });
+
         it("should dismiss the toast when 'Dismiss' button clicked, and remember it", async () => {
             vi.spyOn(DeviceListener.sharedInstance(), "recordRecoveryDisabled");
             vi.spyOn(DeviceListener.sharedInstance(), "dismissEncryptionSetup");
@@ -54,7 +69,7 @@ describe("SetupEncryptionToast", () => {
             act(() => showToast("set_up_recovery"));
 
             const user = userEvent.setup();
-            await user.click(await screen.findByRole("button", { name: "Dismiss" }));
+            await user.click(await screen.findByRole("button", { name: "Not now" }));
 
             expect(DeviceListener.sharedInstance().recordRecoveryDisabled).toHaveBeenCalled();
             expect(DeviceListener.sharedInstance().dismissEncryptionSetup).toHaveBeenCalled();

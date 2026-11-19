@@ -3,7 +3,9 @@
 Start9's fork of [element-hq/element-web](https://github.com/element-hq/element-web): the web client at
 `support.start9.me`, shipped as `ghcr.io/start9labs/element-web` and deployed by `ansible-matrix-support`.
 Upstream's own docs still apply — [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md),
-[developer_guide.md](developer_guide.md), `docs/`. This file covers only what is different here.
+[developer_guide.md](developer_guide.md), `docs/`, and upstream's own `AGENTS.md`, which this file takes the place of
+(`git show <base tag>:AGENTS.md`; on a merge that conflicts here, keep ours). This file covers only what is different
+here.
 
 `start9.me` runs with end-to-end encryption disabled and its users keyless, so the client has to work well
 with encryption off, on a phone, and installed as a PWA. Upstream is built for the opposite: it nags to set
@@ -55,18 +57,16 @@ at a tag.
 
 ## Checks
 
-CI runs upstream's full jest and vitest suites, so an upstream merge that breaks a patch fails there. Locally, run
+CI runs upstream's full vitest suite for `apps/web`, so an upstream merge that breaks a patch fails there. Locally, run
 the files you touched:
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm exec nx run element-web:test:unit:prepare
-cd apps/web && pnpm exec vitest run src/hooks src/utils/crypto   # vitest: src/**/*.test.ts*
-cd apps/web && pnpm exec jest test/unit-tests/components/views/settings/devices   # jest: test/unit-tests/**/*-test.ts*
+cd apps/web && pnpm exec vitest run src/hooks src/utils/crypto   # src/**/*.test.ts*; *.test.browser.ts* need Playwright's Chromium
 ```
 
-`lint:types` is red at upstream's own release tags at the moment (matrix-js-sdk under TypeScript 7), so check it
-with `pnpm exec tsc --noEmit 2>&1 | grep -v MSC4108SignInWithQR` in `apps/web` until that clears.
+Check types with `pnpm lint:types` in `apps/web`.
 
 Build the image from the repo root with `docker buildx bake element-web`. It reads `.git` for the version, so
 build from a clone, not an export.

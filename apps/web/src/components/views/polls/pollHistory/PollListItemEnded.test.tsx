@@ -8,19 +8,17 @@ Please see LICENSE files in the repository root for full details.
 
 // @vitest-environment happy-dom
 
-import { vi, describe, it, expect, beforeAll, afterAll } from "vitest";
+import { vi, describe, it, expect, beforeEach, MockedObject } from "vitest";
 import React from "react";
 import { render } from "test-utils-rtl";
-import { type MatrixEvent, type Poll, Room, M_TEXT } from "matrix-js-sdk/src/matrix";
+import { type MatrixEvent, type Poll, Room, M_TEXT, MatrixClient } from "matrix-js-sdk/src/matrix";
 import {
     getMockClientWithEventEmitter,
     makePollEndEvent,
     makePollResponseEvent,
     makePollStartEvent,
     mockClientMethodsUser,
-    mockIntlDateTimeFormat,
     setupRoomWithPollEvents,
-    unmockIntlDateTimeFormat,
 } from "test-utils";
 
 import { PollListItemEnded } from "./PollListItemEnded";
@@ -28,13 +26,8 @@ import { PollListItemEnded } from "./PollListItemEnded";
 describe("<PollListItemEnded />", () => {
     const userId = "@alice:domain.org";
     const roomId = "!room:domain.org";
-    const mockClient = getMockClientWithEventEmitter({
-        ...mockClientMethodsUser(userId),
-        getRoom: vi.fn(),
-        relations: vi.fn(),
-        decryptEventIfNeeded: vi.fn(),
-    });
-    const room = new Room(roomId, mockClient, userId);
+    let mockClient: MockedObject<MatrixClient>;
+    let room: Room;
     const timestamp = 1675300825090;
 
     const pollId = "1";
@@ -56,14 +49,14 @@ describe("<PollListItemEnded />", () => {
     const getComponent = (props: { event: MatrixEvent; poll: Poll }) =>
         render(<PollListItemEnded {...props} onClick={vi.fn()} />);
 
-    beforeAll(() => {
-        // mock default locale to en-GB and set timezone
-        // so these tests run the same everywhere
-        mockIntlDateTimeFormat();
-    });
-
-    afterAll(() => {
-        unmockIntlDateTimeFormat();
+    beforeEach(() => {
+        mockClient = getMockClientWithEventEmitter({
+            ...mockClientMethodsUser(userId),
+            getRoom: vi.fn(),
+            relations: vi.fn(),
+            decryptEventIfNeeded: vi.fn(),
+        });
+        room = new Room(roomId, mockClient, userId);
     });
 
     it("renders a poll with no responses", async () => {

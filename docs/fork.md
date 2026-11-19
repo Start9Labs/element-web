@@ -84,7 +84,7 @@ All keys are optional; the default is upstream's behaviour.
 
 - `registration_moved` (object): `url` is where sign-up lives now. When the homeserver has registration disabled, the
   register page says support has moved and links there, naming its host, in place of "Registration has been
-  disabled on this homeserver." Sign in is unaffected.
+  disabled by this account provider." Sign in is unaffected.
 
     ```json
     "registration_moved": { "url": "https://support.example.com/signup" }

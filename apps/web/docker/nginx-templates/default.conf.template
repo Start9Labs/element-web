@@ -19,6 +19,9 @@ server {
     location /i18n/ {
         add_header Cache-Control "no-cache";
     }
+    location /usercontent/ {
+        add_header Cache-Control "no-cache";
+    }
     location = /sw.js {
         add_header Cache-Control "no-cache";
     }

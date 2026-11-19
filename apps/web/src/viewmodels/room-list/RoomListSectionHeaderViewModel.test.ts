@@ -10,7 +10,7 @@
 import { vi, describe, it, expect, beforeEach, afterEach, type Mock } from "vitest";
 import { type MatrixClient, type Room } from "matrix-js-sdk/src/matrix";
 import { CallType } from "matrix-js-sdk/src/webrtc/call";
-import { createTestClient, mkRoom } from "test-utils";
+import { createTestClient, mkRoom, tearDownAfterTest } from "test-utils";
 
 import { RoomListSectionHeaderViewModel } from "./RoomListSectionHeaderViewModel";
 import { RoomNotificationState } from "../../stores/notifications/RoomNotificationState";
@@ -60,6 +60,7 @@ describe("RoomListSectionHeaderViewModel", () => {
             spaceId: "!space:server",
             onToggleExpanded,
         });
+        tearDownAfterTest(vm);
 
         const snapshot = vm.getSnapshot();
         expect(snapshot.id).toBe("m.favourite");
@@ -67,36 +68,38 @@ describe("RoomListSectionHeaderViewModel", () => {
         expect(snapshot.isExpanded).toBe(true);
     });
 
-    it("should toggle expanded state on click", () => {
+    it("should toggle expanded state on click", async () => {
         const vm = new RoomListSectionHeaderViewModel({
             tag: "m.favourite",
             title: "Favourites",
             spaceId: "!space:server",
             onToggleExpanded,
         });
+        tearDownAfterTest(vm);
         expect(vm.isExpanded).toBe(true);
 
-        vm.onClick();
+        await vm.onClick();
         expect(vm.isExpanded).toBe(false);
         expect(vm.getSnapshot().isExpanded).toBe(false);
         expect(onToggleExpanded).toHaveBeenCalledWith(false);
 
-        vm.onClick();
+        await vm.onClick();
         expect(vm.isExpanded).toBe(true);
         expect(vm.getSnapshot().isExpanded).toBe(true);
         expect(onToggleExpanded).toHaveBeenCalledWith(true);
     });
 
-    it("should track expanded state per space", () => {
+    it("should track expanded state per space", async () => {
         const vm = new RoomListSectionHeaderViewModel({
             tag: "m.favourite",
             title: "Favourites",
             spaceId: "!space:server",
             onToggleExpanded,
         });
+        tearDownAfterTest(vm);
 
         // Default space: collapse
-        vm.onClick();
+        await vm.onClick();
         expect(vm.isExpanded).toBe(false);
 
         // Switch to a different space: should default to expanded
@@ -104,14 +107,27 @@ describe("RoomListSectionHeaderViewModel", () => {
         expect(vm.isExpanded).toBe(true);
 
         // Collapse in the new space
-        vm.onClick();
+        await vm.onClick();
         expect(vm.isExpanded).toBe(false);
-        vm.onClick();
+        await vm.onClick();
         expect(vm.isExpanded).toBe(true);
 
         // Switch to the other space: should still be collapsed
         vm.setSpace("!space:server");
         expect(vm.isExpanded).toBe(false);
+    });
+
+    it("should start the Invites section collapsed", () => {
+        // The section appears on its own when an invitation arrives, so it must not push the list down
+        const vm = new RoomListSectionHeaderViewModel({
+            tag: DefaultTagID.Invite,
+            title: "Invites",
+            spaceId: "!space:server",
+            onToggleExpanded,
+        });
+        tearDownAfterTest(vm);
+
+        expect(vm.getSnapshot().isExpanded).toBe(false);
     });
 
     it("should initialize expanded state from the persisted setting", () => {
@@ -123,11 +139,12 @@ describe("RoomListSectionHeaderViewModel", () => {
             spaceId: "!space:server",
             onToggleExpanded,
         });
+        tearDownAfterTest(vm);
 
         expect(vm.getSnapshot().isExpanded).toBe(false);
     });
 
-    it("should persist the expanded state at the device level on click", () => {
+    it("should persist the expanded state at the device level on click", async () => {
         const setValue = vi.spyOn(SettingsStore, "setValue");
         const vm = new RoomListSectionHeaderViewModel({
             tag: "m.favourite",
@@ -135,8 +152,9 @@ describe("RoomListSectionHeaderViewModel", () => {
             spaceId: "!space:server",
             onToggleExpanded,
         });
+        tearDownAfterTest(vm);
 
-        vm.onClick();
+        await vm.onClick();
 
         expect(setValue).toHaveBeenCalledWith("RoomList.SectionExpansionState", null, SettingLevel.DEVICE, {
             "!space:server": { "m.favourite": false },
@@ -152,6 +170,7 @@ describe("RoomListSectionHeaderViewModel", () => {
             spaceId: "!space:server",
             onToggleExpanded,
         });
+        tearDownAfterTest(vm);
 
         vm.isExpanded = false;
 
@@ -162,9 +181,11 @@ describe("RoomListSectionHeaderViewModel", () => {
 
     describe("displaySectionMenu", () => {
         it.each([
+            [DefaultTagID.Invite, false],
             [DefaultTagID.Favourite, false],
             [DefaultTagID.LowPriority, false],
             [CHATS_TAG, false],
+            [DefaultTagID.DM, false],
             ["element.io.section.custom", true],
         ])("should be %s for tag %s", (tag, expected) => {
             const vm = new RoomListSectionHeaderViewModel({
@@ -173,16 +194,31 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
             expect(vm.getSnapshot().displaySectionMenu).toBe(expected);
         });
     });
 
     describe("canBeReordered", () => {
+        const customTag = "element.io.section.custom";
+
+        beforeEach(() => {
+            // A header is only rendered for a custom section that exists in the settings
+            vi.spyOn(SettingsStore, "getValue").mockImplementation((setting) => {
+                if (setting === "RoomList.CustomSectionData") return { [customTag]: { tag: customTag, name: "A" } };
+                if (setting === "RoomList.SectionExpansionState") return sectionExpansionState;
+                return null;
+            });
+        });
+
         it.each([
+            [DefaultTagID.Invite, false],
             [DefaultTagID.Favourite, false],
             [DefaultTagID.LowPriority, false],
             [CHATS_TAG, true],
-            ["element.io.section.custom", true],
+            [DefaultTagID.DM, true],
+            [customTag, true],
+            ["element.io.section.deleted", false],
         ])("should be %s for tag %s", (tag, expected) => {
             const vm = new RoomListSectionHeaderViewModel({
                 tag,
@@ -190,7 +226,39 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
             expect(vm.getSnapshot().canBeReordered).toBe(expected);
+        });
+    });
+
+    describe("acceptedRoomKind", () => {
+        function makeViewModel(tag: string, showPeopleSection = true): RoomListSectionHeaderViewModel {
+            vi.spyOn(SettingsStore, "getValue").mockImplementation((setting) => {
+                if (setting === "RoomList.showPeopleSection") return showPeopleSection;
+                if (setting === "RoomList.SectionExpansionState") return sectionExpansionState;
+                return null;
+            });
+            return new RoomListSectionHeaderViewModel({
+                tag,
+                title: "Section",
+                spaceId: "!space:server",
+                onToggleExpanded,
+            });
+        }
+
+        it.each([
+            [DefaultTagID.DM, "dm"],
+            [CHATS_TAG, "nonDm"],
+            [DefaultTagID.Invite, "none"],
+            [DefaultTagID.Favourite, "any"],
+            [DefaultTagID.LowPriority, "any"],
+            ["element.io.section.custom", "any"],
+        ])("should be %s for tag %s when the People section is shown", (tag, expected) => {
+            expect(makeViewModel(tag).getSnapshot().acceptedRoomKind).toBe(expected);
+        });
+
+        it("should let the Chats section accept any room when the People section is hidden", () => {
+            expect(makeViewModel(CHATS_TAG, false).getSnapshot().acceptedRoomKind).toBe("any");
         });
     });
 
@@ -212,6 +280,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
             expect(vm.getSnapshot().title).toBe("Old Title");
 
             vi.spyOn(SettingsStore, "getValue").mockReturnValue({ [tag]: { tag, name: "New Title" } });
@@ -228,6 +297,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
 
             vi.spyOn(SettingsStore, "getValue").mockReturnValue({});
             watchCallback();
@@ -242,6 +312,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
 
             watchCallback();
 
@@ -259,6 +330,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
 
             await vm.editSection();
             expect(editSectionSpy).toHaveBeenCalledWith(tag);
@@ -284,6 +356,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
 
             await vm.removeSection();
             expect(removeSectionSpy).toHaveBeenCalledWith(tag, true);
@@ -298,6 +371,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
             vm.setRooms([mkRoom(matrixClient, "!room:server")]);
 
             await vm.removeSection();
@@ -312,7 +386,7 @@ describe("RoomListSectionHeaderViewModel", () => {
         beforeEach(() => {
             vi.useFakeTimers();
             room = mkRoom(matrixClient, "!room:server");
-            notificationState = new RoomNotificationState(room, false);
+            notificationState = tearDownAfterTest(new RoomNotificationState(room, false));
             vi.spyOn(RoomNotificationStateStore.instance, "getRoomState").mockReturnValue(notificationState);
         });
 
@@ -327,6 +401,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
             vm.setRooms([room]);
 
             expect(vm.getSnapshot().isUnread).toBe(false);
@@ -341,14 +416,48 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
             vm.setRooms([room]);
 
             expect(vm.getSnapshot().isUnread).toBe(true);
         });
 
+        it("should collapse the Invites section once its invitations are gone", async () => {
+            const vm = new RoomListSectionHeaderViewModel({
+                tag: DefaultTagID.Invite,
+                title: "Invites",
+                spaceId: "!space:server",
+                onToggleExpanded,
+            });
+            tearDownAfterTest(vm);
+            await vm.onClick();
+            expect(vm.getSnapshot().isExpanded).toBe(true);
+
+            // The last invitation was accepted or rejected
+            vm.setRooms([]);
+
+            // Closed again, so the next invitation makes the section appear collapsed
+            expect(vm.getSnapshot().isExpanded).toBe(false);
+        });
+
+        it("should leave an expanded section expanded when it empties", () => {
+            const vm = new RoomListSectionHeaderViewModel({
+                tag: "m.favourite",
+                title: "Favourites",
+                spaceId: "!space:server",
+                onToggleExpanded,
+            });
+            tearDownAfterTest(vm);
+
+            vm.setRooms([]);
+
+            // Only the Invites section is collapsed on emptying
+            expect(vm.getSnapshot().isExpanded).toBe(true);
+        });
+
         it("should subscribe to new rooms and unsubscribe from removed rooms", () => {
             const room2 = mkRoom(matrixClient, "!room2:server");
-            const notificationState2 = new RoomNotificationState(room2, false);
+            const notificationState2 = tearDownAfterTest(new RoomNotificationState(room2, false));
 
             vi.spyOn(RoomNotificationStateStore.instance, "getRoomState")
                 .mockReturnValueOnce(notificationState)
@@ -364,6 +473,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
             vm.setRooms([room]);
 
             expect(notificationState.on).toHaveBeenCalledWith(NotificationStateEvents.Update, expect.any(Function));
@@ -385,6 +495,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
             vm.setRooms([room]);
 
             expect(vm.getSnapshot().isUnread).toBe(false);
@@ -404,6 +515,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                     spaceId: "!space:server",
                     onToggleExpanded,
                 });
+                tearDownAfterTest(vm);
                 vm.setRooms([room]);
 
                 expect(vm.getSnapshot().notification).toEqual(
@@ -428,6 +540,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                     spaceId: "!space:server",
                     onToggleExpanded,
                 });
+                tearDownAfterTest(vm);
                 vm.setRooms([room]);
 
                 // Bold, but no badge to display
@@ -442,7 +555,7 @@ describe("RoomListSectionHeaderViewModel", () => {
 
             it("should merge mentions, notifications and counts across rooms", () => {
                 const room2 = mkRoom(matrixClient, "!room2:server");
-                const notificationState2 = new RoomNotificationState(room2, false);
+                const notificationState2 = tearDownAfterTest(new RoomNotificationState(room2, false));
 
                 vi.spyOn(RoomNotificationStateStore.instance, "getRoomState")
                     .mockReturnValueOnce(notificationState)
@@ -462,6 +575,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                     spaceId: "!space:server",
                     onToggleExpanded,
                 });
+                tearDownAfterTest(vm);
                 vm.setRooms([room, room2]);
 
                 expect(vm.getSnapshot().notification).toEqual(
@@ -485,6 +599,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                     spaceId: "!space:server",
                     onToggleExpanded,
                 });
+                tearDownAfterTest(vm);
                 vm.setRooms([room]);
 
                 expect(vm.getSnapshot().notification).toEqual(
@@ -495,28 +610,43 @@ describe("RoomListSectionHeaderViewModel", () => {
                 );
             });
 
-            it("should aggregate an invitation from any room", () => {
-                vi.spyOn(notificationState, "invited", "get").mockReturnValue(true);
+            it("should report invitations as a count rather than an icon", () => {
+                const room2 = mkRoom(matrixClient, "!room2:server");
+                const notificationState2 = tearDownAfterTest(new RoomNotificationState(room2, false));
+                for (const state of [notificationState, notificationState2]) {
+                    // An invitation reports neither a mention nor a notification
+                    vi.spyOn(state, "invited", "get").mockReturnValue(true);
+                    vi.spyOn(state, "isMention", "get").mockReturnValue(false);
+                    vi.spyOn(state, "isNotification", "get").mockReturnValue(false);
+                }
+                vi.spyOn(RoomNotificationStateStore.instance, "getRoomState")
+                    .mockReturnValueOnce(notificationState)
+                    .mockReturnValue(notificationState2);
 
                 const vm = new RoomListSectionHeaderViewModel({
-                    tag: "m.favourite",
-                    title: "Favourites",
+                    tag: DefaultTagID.Invite,
+                    title: "Invites",
                     spaceId: "!space:server",
                     onToggleExpanded,
                 });
-                vm.setRooms([room]);
+                tearDownAfterTest(vm);
+                vm.setRooms([room, room2]);
 
                 expect(vm.getSnapshot().notification).toEqual(
                     expect.objectContaining({
                         hasAnyNotificationOrActivity: true,
-                        invited: true,
+                        // Counted as a notification so that the collapsed header renders the badge
+                        isNotification: true,
+                        count: 2,
+                        // The count is shown on its own, without the invitation icon
+                        invited: false,
                     }),
                 );
             });
 
             it("should aggregate an active call, preferring video over voice", () => {
                 const room2 = mkRoom(matrixClient, "!room2:server");
-                const notificationState2 = new RoomNotificationState(room2, false);
+                const notificationState2 = tearDownAfterTest(new RoomNotificationState(room2, false));
 
                 vi.spyOn(RoomNotificationStateStore.instance, "getRoomState")
                     .mockReturnValueOnce(notificationState)
@@ -544,6 +674,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                     spaceId: "!space:server",
                     onToggleExpanded,
                 });
+                tearDownAfterTest(vm);
                 vm.setRooms([room, room2]);
 
                 expect(vm.getSnapshot().notification).toEqual(
@@ -569,6 +700,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                     spaceId: "!space:server",
                     onToggleExpanded,
                 });
+                tearDownAfterTest(vm);
                 vm.setRooms([room]);
 
                 expect(vm.getSnapshot().notification?.callType).toBeUndefined();
@@ -587,6 +719,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                     spaceId: "!space:server",
                     onToggleExpanded,
                 });
+                tearDownAfterTest(vm);
                 vm.setRooms([room]);
 
                 expect(vm.getSnapshot().isUnread).toBe(true);
@@ -608,6 +741,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                     spaceId: "!space:server",
                     onToggleExpanded,
                 });
+                tearDownAfterTest(vm);
                 vm.setRooms([room]);
 
                 expect(vm.getSnapshot().notification?.isMention).toBe(false);
@@ -629,6 +763,7 @@ describe("RoomListSectionHeaderViewModel", () => {
                 spaceId: "!space:server",
                 onToggleExpanded,
             });
+            tearDownAfterTest(vm);
             vm.setRooms([room]);
 
             vm.dispose();
