@@ -12,9 +12,10 @@ import React, { type ReactNode } from "react";
 import { STABLE_MSC4133_EXTENDED_PROFILES, UNSTABLE_MSC4133_EXTENDED_PROFILES } from "matrix-js-sdk/src/matrix";
 import { type JsonDocument, type JsonValue } from "shared-types";
 // Import these directly from shared-components to avoid circular deps
-import { _t, _td } from "@element-hq/web-shared-components";
+import { _t, _td, type FilterId } from "@element-hq/web-shared-components";
 
 import { type MediaPreviewConfig } from "../@types/media_preview.ts";
+import { type PdfViewerState } from "../@types/pdf-viewer.ts";
 import DeviceIsolationModeController from "./controllers/DeviceIsolationModeController.ts";
 import {
     NotificationBodyEnabledController,
@@ -28,8 +29,10 @@ import { SettingLevel } from "./SettingLevel";
 import type SettingController from "./controllers/SettingController";
 import { IS_MAC } from "../Keyboard";
 import UIFeatureController from "./controllers/UIFeatureController";
-import { UIFeature } from "./UIFeature";
+import UIComponentController from "./controllers/UIComponentController";
+import { UIComponent, UIFeature } from "./UIFeature";
 import { Layout } from "./enums/Layout";
+import { TokenizerMode } from "./enums/TokenizerMode";
 import ReducedMotionController from "./controllers/ReducedMotionController";
 import IncompatibleController from "./controllers/IncompatibleController";
 import { ImageSize } from "./enums/ImageSize";
@@ -148,8 +151,10 @@ export interface IBaseSetting<T extends SettingValueType = SettingValueType> {
     // represent a boolean).
     default: T;
 
-    // Optional settings controller. See SettingsController for more information.
-    controller?: SettingController;
+    // Optional setting controller(s). See SettingController for more information.
+    // When several are given they are consulted in the order they are declared in: the first one
+    // to return an override wins, and the first one to refuse a change stops the change.
+    controller?: SettingController | SettingController[];
 
     // Optional flag to make supportedLevels be respected as the order to handle
     // settings. The first element is treated as "most preferred". The "default"
@@ -220,11 +225,14 @@ export interface Settings {
     "feature_sliding_sync": IBaseSetting<boolean>;
     "feature_simplified_sliding_sync": IFeature;
     "feature_element_call_video_rooms": IFeature;
-    "feature_disable_call_per_sender_encryption": IFeature;
+    "feature_element_call_react": IFeature;
+    "feature_matrixrtc_slots": IFeature;
     "feature_location_share_live": IFeature;
     "feature_dynamic_room_predecessors": IFeature;
     "feature_render_reaction_images": IFeature;
+    "feature_pdf_viewer": IFeature;
     "feature_retention": IFeature;
+    "feature_new_timeline": IFeature;
     "feature_ask_to_join": IFeature;
     "feature_notifications": IFeature;
     "feature_msc4362_encrypted_state_events": IFeature;
@@ -292,6 +300,7 @@ export interface Settings {
     "breadcrumb_rooms": IBaseSetting<string[]>;
     "recent_emoji": IBaseSetting<RecentEmojiData>;
     "showMediaEventIds": IBaseSetting<{ [eventId: string]: boolean }>;
+    "pdfViewerState": IBaseSetting<{ [mxcUri: string]: PdfViewerState }>;
     "SpotlightSearch.recentSearches": IBaseSetting<string[]>;
     "SpotlightSearch.showNsfwPublicRooms": IBaseSetting<boolean>;
     "room_directory_servers": IBaseSetting<string[]>;
@@ -307,6 +316,7 @@ export interface Settings {
     "blacklistUnverifiedDevices": IBaseSetting<boolean>;
     "urlPreviewsEnabled": IBaseSetting<boolean>;
     "urlPreviewsEnabled_e2ee": IBaseSetting<boolean>;
+    "urlPreviewsEnabled_e2ee_bundled_only": IBaseSetting<boolean>;
     "notificationsEnabled": IBaseSetting<boolean>;
     "deviceNotificationsEnabled": IBaseSetting<boolean>;
     "notificationSound": IBaseSetting<NotificationSound | false>;
@@ -334,6 +344,7 @@ export interface Settings {
     "RightPanel.phases": IBaseSetting<IRightPanelForRoomStored | null>;
     "enableEventIndexing": IBaseSetting<boolean>;
     "crawlerSleepTime": IBaseSetting<number>;
+    "tokenizerMode": IBaseSetting<TokenizerMode>;
     "ircDisplayNameWidth": IBaseSetting<number>;
     "layout": IBaseSetting<Layout>;
     "Images.size": IBaseSetting<ImageSize>;
@@ -363,10 +374,13 @@ export interface Settings {
     "inviteRules": IBaseSetting<ComputedInviteConfig>;
     "blockInvites": IBaseSetting<boolean>;
     "Developer.elementCallUrl": IBaseSetting<string>;
+    "Developer.elementCallMockComponent": IBaseSetting<boolean>;
     "RoomList.CustomSectionData": IBaseSetting<CustomSectionsData>;
     "RoomList.OrderedCustomSections": IBaseSetting<ReorderableSection[]>;
     "RoomList.SectionExpansionState": IBaseSetting<SectionExpansionState>;
+    "RoomList.activeFilter": IBaseSetting<FilterId | null>;
     "RoomList.showSections": IBaseSetting<boolean>;
+    "RoomList.showPeopleSection": IBaseSetting<boolean>;
     "composerUrlPreviewCollapsed": IBaseSetting<boolean>;
 }
 
@@ -588,12 +602,23 @@ export const SETTINGS: Settings = {
         controller: new ReloadOnChangeController(),
         default: false,
     },
-    "feature_disable_call_per_sender_encryption": {
+    "feature_element_call_react": {
         isFeature: true,
         labsGroup: LabGroup.VoiceAndVideo,
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG_PRIORITISED,
         supportedLevelsAreOrdered: true,
-        displayName: _td("labs|feature_disable_call_per_sender_encryption"),
+        displayName: _td("labs|feature_element_call_react"),
+        // A call that is already mounted with one embedding (widget/component) cannot be switched to the other.
+        controller: new ReloadOnChangeController(),
+        default: false,
+    },
+    "feature_matrixrtc_slots": {
+        isFeature: true,
+        labsGroup: LabGroup.VoiceAndVideo,
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG_PRIORITISED,
+        supportedLevelsAreOrdered: true,
+        displayName: _td("labs|feature_matrixrtc_slots"),
+        description: _td("labs|feature_matrixrtc_slots_description"),
         default: false,
     },
     "feature_location_share_live": {
@@ -621,6 +646,26 @@ export const SETTINGS: Settings = {
         labsGroup: LabGroup.Messaging,
         displayName: _td("labs|render_reaction_images"),
         description: _td("labs|render_reaction_images_description"),
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG_PRIORITISED,
+        supportedLevelsAreOrdered: true,
+        default: false,
+    },
+    "feature_new_timeline": {
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG_PRIORITISED,
+        labsGroup: LabGroup.Ui,
+        displayName: _td("labs|new_timeline"),
+        description: _td("labs|currently_experimental"),
+        isFeature: true,
+        default: false,
+        controller: new ReloadOnChangeController(),
+    },
+    // Covers every document viewer, not only PDFs. The key predates the Markdown viewer and is kept so
+    // that people who already turned the lab on keep it, and only for as long as the lab exists.
+    "feature_pdf_viewer": {
+        isFeature: true,
+        labsGroup: LabGroup.Messaging,
+        displayName: _td("labs|document_previews"),
+        description: _td("labs|document_previews_description"),
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG_PRIORITISED,
         supportedLevelsAreOrdered: true,
         default: false,
@@ -695,7 +740,10 @@ export const SETTINGS: Settings = {
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG,
         displayName: _td("settings|activityIsUnread"),
         default: false,
-        controller: new RequiresSettingsController(["Notifications.showbold"]),
+        controller: [
+            new AnalyticsController("WebSettingsActivityIsUnreadToggle"),
+            new RequiresSettingsController(["Notifications.showbold"]),
+        ],
     },
     "Notifications.tac_only_notifications": {
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG,
@@ -752,7 +800,7 @@ export const SETTINGS: Settings = {
             true,
             true,
         ),
-        default: false,
+        default: true,
     },
     "feature_retention": {
         isFeature: true,
@@ -817,7 +865,7 @@ export const SETTINGS: Settings = {
         default: false,
     },
     "userTimezone": {
-        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS_WITH_CONFIG,
         displayName: _td("settings|preferences|user_timezone"),
         default: "",
         // Location leak
@@ -1034,6 +1082,13 @@ export const SETTINGS: Settings = {
         // Exports event IDs
         shouldExportToRageshake: false,
     },
+    "pdfViewerState": {
+        // not really a setting
+        supportedLevels: [SettingLevel.DEVICE],
+        default: {}, // MXC URI => where the reader had got to in that PDF
+        // Exports MXC URIs
+        shouldExportToRageshake: false,
+    },
     "SpotlightSearch.showNsfwPublicRooms": {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
         displayName: _td("settings|show_nsfw_content"),
@@ -1106,7 +1161,9 @@ export const SETTINGS: Settings = {
         displayName: _td("settings|inline_url_previews_default"),
         default: true,
         controller: new RequiresSettingsController([UIFeature.URLPreviews], false, (c) => {
-            if (c["io.element.msc4452.preview_url"]?.enabled !== false) {
+            // Prefer the stable capability, falling back to the unstable MSC4452 prefix for older servers.
+            const previewUrlCapability = c["m.preview_url"] ?? c["io.element.msc4452.preview_url"];
+            if (previewUrlCapability?.enabled !== false) {
                 // If the capability is not listed, or explicitly true then do not disable.
                 return false;
             }
@@ -1121,6 +1178,19 @@ export const SETTINGS: Settings = {
         displayName: _td("settings|inline_url_previews_encrypted"),
         default: false,
         controller: new RequiresSettingsController([UIFeature.URLPreviews, "urlPreviewsEnabled"]),
+    },
+    "urlPreviewsEnabled_e2ee_bundled_only": {
+        // Can only be enabled per-device to ensure neither the homeserver nor client config
+        // can impact the user's choices.
+        supportedLevels: [SettingLevel.DEVICE],
+        supportedLevelsAreOrdered: true,
+        displayName: _td("settings|inline_url_previews_encrypted_bundled_only"),
+        default: true,
+        controller: new RequiresSettingsController([
+            UIFeature.URLPreviews,
+            "feature_msc4095_url_preview_bundle",
+            "urlPreviewsEnabled_e2ee",
+        ]),
     },
     "notificationsEnabled": {
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
@@ -1215,6 +1285,16 @@ export const SETTINGS: Settings = {
         supportedLevels: LEVELS_ACCOUNT_SETTINGS,
         default: true,
         displayName: _td("settings|show_sections"),
+        controller: new AnalyticsController("WebRoomListSectionToggle"),
+    },
+    "RoomList.showPeopleSection": {
+        supportedLevels: LEVELS_ACCOUNT_SETTINGS,
+        default: true,
+        displayName: _td("settings|show_people_sections"),
+        controller: [
+            new AnalyticsController("WebRoomListPeopleSectionToggle"),
+            new RequiresSettingsController(["RoomList.showSections"]),
+        ],
     },
     "composerUrlPreviewCollapsed": {
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
@@ -1237,6 +1317,11 @@ export const SETTINGS: Settings = {
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
         displayName: _td("settings|security|message_search_sleep_time"),
         default: 3000,
+    },
+    "tokenizerMode": {
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
+        displayName: _td("settings|security|tokenizer_mode"),
+        default: TokenizerMode.Language,
     },
     "ircDisplayNameWidth": {
         // We specifically want to have room-device > device so that users may set a device default
@@ -1357,6 +1442,14 @@ export const SETTINGS: Settings = {
         supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
         default: {},
     },
+    /**
+     * Managed by the {@link RoomListViewModel}
+     * Store the primary filter selected in the room list so it survives a reload or relaunch
+     */
+    "RoomList.activeFilter": {
+        supportedLevels: LEVELS_DEVICE_ONLY_SETTINGS,
+        default: null,
+    },
     [UIFeature.RoomHistorySettings]: {
         supportedLevels: LEVELS_UI_FEATURE,
         default: true,
@@ -1426,10 +1519,12 @@ export const SETTINGS: Settings = {
     [UIFeature.AllowCreatingPublicSpaces]: {
         supportedLevels: LEVELS_UI_FEATURE,
         default: true,
+        controller: new UIComponentController(UIComponent.PublicRooms),
     },
     [UIFeature.AllowCreatingPublicRooms]: {
         supportedLevels: LEVELS_UI_FEATURE,
         default: true,
+        controller: new UIComponentController(UIComponent.PublicRooms),
     },
 
     // Electron-specific settings, they are stored by Electron and set/read over an IPC.
@@ -1473,5 +1568,12 @@ export const SETTINGS: Settings = {
         supportedLevels: [SettingLevel.DEVICE],
         displayName: _td("devtools|settings|elementCallUrl"),
         default: "",
+    },
+    "Developer.elementCallMockComponent": {
+        // With feature_element_call_react: render the mock Element Call component (HostBridge buttons, no
+        // media) instead of the real one. Used by Playwright and for development without a LiveKit backend.
+        supportedLevels: [SettingLevel.DEVICE],
+        displayName: _td("devtools|settings|elementCallMockComponent"),
+        default: false,
     },
 };

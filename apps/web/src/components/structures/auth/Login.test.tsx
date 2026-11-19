@@ -272,7 +272,7 @@ describe("Login", function () {
         await waitForElementToBeRemoved(() => screen.queryAllByLabelText("Loading…"));
 
         expect(
-            screen.getByText("This homeserver doesn't offer any login flows that are supported by this client."),
+            screen.getByText("This account provider doesn't offer any login flows that are supported by this client."),
         ).toBeInTheDocument();
 
         // no sso button because server2 doesnt support sso
@@ -351,7 +351,7 @@ describe("Login", function () {
         await waitForElementToBeRemoved(() => screen.queryAllByLabelText("Loading…"));
 
         expect(
-            screen.getByText("This homeserver doesn't offer any login flows that are supported by this client."),
+            screen.getByText("This account provider doesn't offer any login flows that are supported by this client."),
         ).toBeInTheDocument();
     });
 
@@ -361,9 +361,7 @@ describe("Login", function () {
         getComponent();
         await waitForElementToBeRemoved(() => screen.queryAllByLabelText("Loading…"));
 
-        expect(
-            screen.getByText("There was a problem communicating with the homeserver, please try again later."),
-        ).toBeInTheDocument();
+        expect(screen.getByText("Something went wrong. Please try again later.")).toBeInTheDocument();
     });
 
     it("should display an error when homeserver fails liveliness check", async () => {
@@ -375,7 +373,7 @@ describe("Login", function () {
         await waitForElementToBeRemoved(() => screen.queryAllByLabelText("Loading…"));
 
         // error displayed
-        expect(screen.getByText("Cannot reach homeserver")).toBeInTheDocument();
+        expect(screen.getByText("Can't connect")).toBeInTheDocument();
     });
 
     it("should reset liveliness error when server config changes", async () => {
@@ -393,14 +391,14 @@ describe("Login", function () {
         await waitForElementToBeRemoved(() => screen.queryAllByLabelText("Loading…"));
 
         // error displayed
-        expect(screen.getByText("Cannot reach homeserver")).toBeInTheDocument();
+        expect(screen.getByText("Can't connect")).toBeInTheDocument();
 
         rerender(getRawComponent("https://server2"));
 
         await waitForElementToBeRemoved(() => screen.queryAllByLabelText("Loading…"));
 
         // error cleared
-        expect(screen.queryByText("Cannot reach homeserver")).not.toBeInTheDocument();
+        expect(screen.queryByText("Can't connect")).not.toBeInTheDocument();
     });
 
     describe("OIDC native flow", () => {

@@ -8,7 +8,7 @@ Please see LICENSE files in the repository root for full details.
 import { SynapseContainer as BaseSynapseContainer } from "@element-hq/element-web-playwright-common/lib/testcontainers/index.js";
 
 const DOCKER_IMAGE =
-    "ghcr.io/element-hq/synapse:develop@sha256:315ba7880a0ab52d6499e3470d98c004506c8b52b49c6e19fcc29bffabac5313";
+    "ghcr.io/element-hq/synapse:develop@sha256:98dfbe3a90dc4988250787d6b850064aa3ed04a77075d07f23af9dfd2a58d622";
 
 /**
  * SynapseContainer which freezes the docker digest to stabilise tests,
@@ -17,5 +17,10 @@ const DOCKER_IMAGE =
 export class SynapseContainer extends BaseSynapseContainer {
     public constructor() {
         super(DOCKER_IMAGE);
+        // Synapse advertises the `m.preview_url` capability based on `url_preview_enabled`, and the client hides
+        // URL previews when it is disabled. Tests mock the preview responses, so block every IP range to ensure
+        // Synapse never fetches a real URL.
+        this.withConfigField("url_preview_enabled", true);
+        this.withConfigField("url_preview_ip_range_blacklist", ["0.0.0.0/0", "::/0"]);
     }
 }

@@ -3,7 +3,9 @@
 Start9's fork of [element-hq/element-web](https://github.com/element-hq/element-web): the web client at
 `support.start9.me`, shipped as `ghcr.io/start9labs/element-web` and deployed by `ansible-matrix-support`.
 Upstream's own docs still apply — [README.md](README.md), [CONTRIBUTING.md](CONTRIBUTING.md),
-[developer_guide.md](developer_guide.md), `docs/`. This file covers only what is different here.
+[developer_guide.md](developer_guide.md), `docs/`, and upstream's own `AGENTS.md`, which this file takes the place of
+(`git show <base tag>:AGENTS.md`; on a merge that conflicts here, keep ours). This file covers only what is different
+here.
 
 `start9.me` runs with end-to-end encryption disabled and its users keyless, so the client has to work well
 with encryption off, on a phone, and installed as a PWA. Upstream is built for the opposite: it nags to set
@@ -55,18 +57,16 @@ at a tag.
 
 ## Checks
 
-CI runs upstream's full jest and vitest suites, so an upstream merge that breaks a patch fails there. Locally, run
+CI runs upstream's full vitest suite for `apps/web`, so an upstream merge that breaks a patch fails there. Locally, run
 the files you touched:
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm exec nx run element-web:test:unit:prepare
-cd apps/web && pnpm exec vitest run src/hooks src/utils/crypto   # vitest: src/**/*.test.ts*
-cd apps/web && pnpm exec jest test/unit-tests/components/views/settings/devices   # jest: test/unit-tests/**/*-test.ts*
+cd apps/web && pnpm exec vitest run src/hooks src/utils/crypto   # src/**/*.test.ts*; *.test.browser.ts* need Playwright's Chromium
 ```
 
-`lint:types` is red at upstream's own release tags at the moment (matrix-js-sdk under TypeScript 7), so check it
-with `pnpm exec tsc --noEmit 2>&1 | grep -v MSC4108SignInWithQR` in `apps/web` until that clears.
+Check types with `pnpm lint:types` in `apps/web`.
 
 Build the image from the repo root with `docker buildx bake element-web`. It reads `.git` for the version, so
 build from a clone, not an export.
@@ -106,6 +106,7 @@ Upstream files carrying a keyless patch, on `master` only (under `apps/web/src/`
 - `verification.ts` — pending-verification lookup tolerates missing crypto.
 - `device-listener/DeviceListenerCurrentDevice.ts` — no setup-encryption toast when the homeserver force-disables
   encryption and no room is encrypted; covers a session that started while the well-known was unreachable.
+- `components/structures/MatrixChat.tsx` — no forced verification when restoring a crypto-disabled session.
 - `components/views/dialogs/UserSettingsDialog.tsx` — no Encryption tab.
 - `components/views/settings/tabs/user/SecurityUserSettingsTab.tsx` — no encryption section, no "encryption
   disabled by your admin" warning.
@@ -129,6 +130,8 @@ Upstream files carrying a patch on both branches (under `apps/web/src/` unless n
 - `components/views/auth/AuthFooter.tsx` — `branding.auth_footer_powered_by_matrix: false` drops the Matrix link.
 - `components/views/auth/PasswordLogin.tsx` and `RegistrationForm.tsx` — `disable_phone_login`; the registration
   form only promises discovery by email when `UIFeature.identityServer` is on.
+- `components/structures/auth/Registration.tsx` — `registration_moved` replaces the registration-disabled error with
+  a link to where sign-up lives now.
 - `vector/init.tsx` — applies `web_app_manifest` once the config is loaded, starts the visual-viewport fit, and watches
   for a stale page.
 - `SupportedBrowser.ts` — phones are a supported device type, Samsung Internet is a supported browser, and
@@ -149,6 +152,7 @@ in `docs/fork.md`.
 
 Fork-only files: `utils/crypto/fetchShouldForceDisableEncryption.ts` and `hooks/useCryptoDisabled.ts` on `master`
 only; `hooks/usePhoneLayout.ts`, `components/views/rooms/RoomHeader/BackToRoomListButton.tsx`,
+`components/views/auth/RegistrationMoved.tsx`,
 `res/css/start9/mobile.pcss`, `vector/webAppManifest.ts`, `vector/phoneViewport.ts`, `vector/stalePage.tsx`,
 `serviceworker/push.ts`, `utils/push/webPush.ts`, `utils/push/protocol.ts` on both; and their tests.
 

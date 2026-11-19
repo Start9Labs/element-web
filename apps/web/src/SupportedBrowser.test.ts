@@ -8,20 +8,23 @@ Please see LICENSE files in the repository root for full details.
 
 // @vitest-environment happy-dom
 
-import { vi, describe, it, expect, beforeEach } from "vitest";
+import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import { logger } from "matrix-js-sdk/src/logger";
 
 import { getBrowserSupport, checkBrowserSupport, LOCAL_STORAGE_KEY } from "./SupportedBrowser";
 import ToastStore from "./stores/ToastStore";
-import GenericToast from "./components/views/toasts/GenericToast";
+import { GenericToast } from "@element-hq/web-shared-components";
 
 vi.mock("matrix-js-sdk/src/logger");
 
 describe("SupportedBrowser", () => {
     beforeEach(() => {
-        vi.resetAllMocks();
         localStorage.clear();
         getBrowserSupport.clear();
+    });
+
+    afterEach(() => {
+        vi.resetAllMocks();
     });
 
     const testUserAgentFactory =
@@ -53,7 +56,7 @@ describe("SupportedBrowser", () => {
         // Latest Chrome on Android
         "Mozilla/5.0 (Linux; Android 16; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Mobile Safari/537.36",
         // Latest Firefox on Android
-        "Mozilla/5.0 (Android 16; Mobile; rv:152.0) Gecko/152.0 Firefox/152.0",
+        "Mozilla/5.0 (Android 16; Mobile; rv:155.0) Gecko/155.0 Firefox/155.0",
         // Safari 26 on iOS
         "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
         // Samsung Internet on Android
@@ -81,15 +84,15 @@ describe("SupportedBrowser", () => {
         // Safari 26.0 on macOS
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_2) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15",
         // Latest Firefox on macOS Sonoma
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 15.7; rv:152.0) Gecko/20100101 Firefox/152.0",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 15.7; rv:155.0) Gecko/20100101 Firefox/155.0",
         // Latest Edge on Windows
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.4078.65",
         // Latest Edge on macOS
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36 Edg/150.0.4078.65",
         // Latest Firefox on Windows
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:152.0) Gecko/20100101 Firefox/152.0",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:155.0) Gecko/20100101 Firefox/155.0",
         // Latest Firefox on Linux
-        "Mozilla/5.0 (X11; Linux i686; rv:152.0) Gecko/20100101 Firefox/152.0",
+        "Mozilla/5.0 (X11; Linux i686; rv:155.0) Gecko/20100101 Firefox/155.0",
         // Latest Chrome on Windows
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
     ])("should not warn for supported browsers", testUserAgentFactory());
