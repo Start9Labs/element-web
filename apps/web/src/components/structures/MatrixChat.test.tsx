@@ -1373,6 +1373,23 @@ describe("<MatrixChat />", () => {
                 ).resolves.toBeVisible();
             });
 
+            it.each([undefined, true])(
+                "should restore a crypto-disabled session with force_verification=%s",
+                async (forceVerification) => {
+                    if (forceVerification === undefined) {
+                        delete defaultProps.config.force_verification;
+                    }
+                    mockClient.getCrypto.mockReturnValue(undefined);
+
+                    getComponent();
+
+                    await expect(screen.findByLabelText("User menu")).resolves.toBeVisible();
+                    expect(
+                        screen.queryByRole("heading", { name: "Confirm your digital identity", level: 2 }),
+                    ).not.toBeInTheDocument();
+                },
+            );
+
             it("should not open app after cancelling device verify if unskippable verification is on", async () => {
                 // See https://github.com/element-hq/element-web/issues/29230
                 // We used to allow bypassing force verification by choosing "Verify with
@@ -1586,6 +1603,7 @@ describe("<MatrixChat />", () => {
                 await screen.findByLabelText("User menu");
 
                 expect(screen.getByRole("heading", { name: "Welcome Ernie" })).toBeInTheDocument();
+                expect(localStorage.getItem("force_verification_on_at_login")).toBe("true");
             });
 
             describe("when user does not have cross signing set up", () => {

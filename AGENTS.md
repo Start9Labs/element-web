@@ -106,6 +106,7 @@ Upstream files carrying a keyless patch, on `master` only (under `apps/web/src/`
 - `verification.ts` — pending-verification lookup tolerates missing crypto.
 - `device-listener/DeviceListenerCurrentDevice.ts` — no setup-encryption toast when the homeserver force-disables
   encryption and no room is encrypted; covers a session that started while the well-known was unreachable.
+- `components/structures/MatrixChat.tsx` — no forced verification when restoring a crypto-disabled session.
 - `components/views/dialogs/UserSettingsDialog.tsx` — no Encryption tab.
 - `components/views/settings/tabs/user/SecurityUserSettingsTab.tsx` — no encryption section, no "encryption
   disabled by your admin" warning.

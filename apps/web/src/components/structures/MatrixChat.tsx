@@ -1394,7 +1394,8 @@ export default class MatrixChat extends React.PureComponent<IProps, IState> {
         if (client.isGuest()) return false;
 
         const crypto = client.getCrypto();
-        const crossSigningReady = await crypto?.isCrossSigningReady();
+        if (!crypto) return false;
+        const crossSigningReady = await crypto.isCrossSigningReady();
 
         return !crossSigningReady;
     }
